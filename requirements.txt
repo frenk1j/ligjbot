@@ -1,0 +1,29 @@
+# ============================================================
+# LigjetBot - Dependencies
+# Faza 1: HuggingFace Embeddings (FREE, local)
+# Faza 2: Groq Llama 3.3 (LLM)
+# Vector DB: FAISS (local)
+# ============================================================
+
+# PDF Processing
+pypdf==4.3.1
+
+# Vector Store
+faiss-cpu==1.13.2
+
+# LangChain core
+langchain==1.3.1
+langchain-community==0.4.1
+
+# Embeddings - HuggingFace (100% FALAS, local)
+sentence-transformers==3.1.1
+langchain-huggingface==1.2.2
+
+# Groq LLM
+langchain-groq==1.1.2
+
+# Utilities
+python-dotenv==1.0.1
+numpy>=2.1.0
+tqdm==4.66.5
+colorama==0.4.6

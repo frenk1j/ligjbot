@@ -1,0 +1,36 @@
+# ============================================================
+# LigjetBot — .gitignore
+# ============================================================
+
+# API Keys — KURRE mos commit!
+.env
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Vector store — shumë i madh, rigjenerohet nga Faza 1
+vector_store/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# PDF-të (opcional — shto nëse nuk do i commit)
+# data/pdfs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log

@@ -37,10 +37,10 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.schema import Document
+from langchain_core.documents import Document
 from pypdf import PdfReader
 
 # ============================================================

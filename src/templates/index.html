@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="sq" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#ffffff" id="theme-color-meta"/>
+<title>LigjetBot — Asistenti Juridik</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens: light ───────────────────────────────────────── */
+  :root {
+    --navy:        #1b2f5e;
+    --navy-dark:   #0f1d3d;
+    --navy-mid:    #243672;
+    --red:         #c0281e;
+    --red-hover:   #a81f16;
+
+    --bg:          #ffffff;
+    --bg-sub:      #f8f8f7;
+    --bg-input:    #ffffff;
+    --border:      #e2e0d8;
+    --border-soft: #f0efeb;
+    --text:        #2c2c2a;
+    --text-muted:  #9b9a93;
+    --text-light:  #5c5b56;
+    --user-bubble: #f8f8f7;
+    --error-bg:    #fdf2f1;
+    --error-border:#f5c8c5;
+
+    --sidebar-bg:  #0f1d3d;
+    --sidebar-w:   256px;
+    --radius:      8px;
+    --radius-lg:   12px;
+    --max-w:       700px;
+  }
+
+  /* ── Tokens: dark ────────────────────────────────────────── */
+  [data-theme="dark"] {
+    --bg:          #212121;
+    --bg-sub:      #2f2f2f;
+    --bg-input:    #2f2f2f;
+    --border:      #444;
+    --border-soft: #383838;
+    --text:        #ececec;
+    --text-muted:  #8e8ea0;
+    --text-light:  #a0a0b0;
+    --user-bubble: #2f2f2f;
+    --error-bg:    rgba(192,40,30,.12);
+    --error-border:rgba(192,40,30,.35);
+
+    --sidebar-bg:  #171717;
+    --navy:        #4a7fd4;
+    --navy-dark:   #3a6bc0;
+    --navy-mid:    #5a8fe4;
+  }
+
+  html {
+    height: 100%;
+    /* prevent rubber-band scroll on iOS */
+    overscroll-behavior: none;
+  }
+
+  body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    overscroll-behavior: none;
+    /* iOS safe areas */
+    padding-left:   env(safe-area-inset-left);
+    padding-right:  env(safe-area-inset-right);
+    transition: background .2s, color .2s;
+  }
+
+  .app {
+    display: flex;
+    /* 100dvh handles the mobile browser address bar correctly */
+    height: 100dvh;
+    height: 100vh; /* fallback */
+    overflow: hidden;
+  }
+
+  /* ── Sidebar overlay (mobile) ───────────────────────────── */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 99;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: transform .25s ease;
+    /* iOS safe area left */
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+  }
+
+  .sidebar-icon {
+    width: 34px; height: 34px;
+    background: var(--red);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+
+  .sidebar-close {
+    display: none;
+    background: none; border: none;
+    color: rgba(255,255,255,.5);
+    font-size: 20px; cursor: pointer; padding: 4px;
+    line-height: 1;
+  }
+
+  .new-chat-btn {
+    display: flex; align-items: center; gap: 8px;
+    margin: 12px 12px 0;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.85);
+    cursor: pointer; font-size: 13px;
+    width: calc(100% - 24px);
+    text-align: left;
+    transition: background .15s;
+    font-family: inherit;
+    /* touch target */
+    min-height: 44px;
+  }
+  .new-chat-btn:hover { background: rgba(255,255,255,.12); }
+
+  .sidebar-section {
+    font-size: 10px; font-weight: 600;
+    color: rgba(255,255,255,.35);
+    text-transform: uppercase; letter-spacing: .07em;
+    padding: 20px 16px 6px;
+  }
+
+  .suggestion-btn {
+    display: block; width: 100%;
+    text-align: left; background: none; border: none;
+    color: rgba(255,255,255,.55); font-size: 13px;
+    padding: 9px 16px;
+    cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: background .15s, color .15s;
+    font-family: inherit;
+    min-height: 44px;
+    display: flex; align-items: center;
+  }
+  .suggestion-btn:hover, .suggestion-btn:active {
+    background: rgba(255,255,255,.07);
+    color: rgba(255,255,255,.9);
+  }
+
+  /* ── Main ────────────────────────────────────────────────── */
+  .main {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; background: var(--bg);
+    transition: background .2s;
+    min-width: 0;
+  }
+
+  /* ── Topbar ──────────────────────────────────────────────── */
+  .topbar {
+    padding: 0 16px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0; background: var(--bg);
+    transition: background .2s, border-color .2s;
+    /* iOS safe area top */
+    padding-top: env(safe-area-inset-top);
+    height: calc(52px + env(safe-area-inset-top));
+  }
+
+  .hamburger-btn {
+    display: none;
+    background: none; border: none; color: var(--text-light);
+    font-size: 20px; cursor: pointer; padding: 6px;
+    border-radius: 6px; line-height: 1;
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .hamburger-btn:hover { background: var(--bg-sub); }
+
+  .topbar-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; color: var(--navy);
+    transition: color .2s;
+  }
+  .topbar-icon {
+    width: 28px; height: 28px; background: var(--navy);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: background .2s;
+  }
+  .topbar-divider {
+    width: 1px; height: 18px; background: var(--border); margin: 0 2px;
+    transition: background .2s;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-muted); transition: background .3s; flex-shrink: 0;
+  }
+  .status-dot.ready   { background: #2d8a50; }
+  .status-dot.error   { background: var(--red); }
+  .status-dot.loading { background: #e8a020; animation: pulse 1.2s infinite; }
+
+  .topbar-label {
+    font-size: 13px; color: var(--text-light); transition: color .2s;
+    flex: 1;
+  }
+
+  /* Theme toggle button */
+  .theme-btn {
+    margin-left: auto;
+    background: none; border: 1px solid var(--border);
+    color: var(--text-light); border-radius: 8px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px;
+    transition: background .15s, border-color .15s, color .15s;
+    flex-shrink: 0;
+  }
+  .theme-btn:hover { background: var(--bg-sub); border-color: var(--navy); color: var(--navy); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Messages ────────────────────────────────────────────── */
+  .messages {
+    flex: 1; overflow-y: auto; padding: 0 0 24px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .messages::-webkit-scrollbar { width: 5px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Empty state */
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100%; gap: 14px; padding: 32px 24px; text-align: center;
+  }
+  .empty-logo {
+    width: 60px; height: 60px; background: var(--navy);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; transition: background .2s;
+  }
+  .empty-state h1 { font-size: 22px; font-weight: 600; color: var(--navy); transition: color .2s; }
+  .empty-state p  { color: var(--text-light); max-width: 380px; font-size: 14px; transition: color .2s; }
+
+  .starter-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8px; max-width: 500px; width: 100%; margin-top: 8px;
+  }
+  .starter-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+    cursor: pointer; font-size: 13px; color: var(--navy);
+    text-align: left; transition: border-color .15s, background .15s, color .2s;
+    line-height: 1.4; font-family: inherit;
+    min-height: 44px;
+  }
+  .starter-card:hover, .starter-card:active {
+    border-color: var(--navy); background: var(--bg-sub);
+  }
+
+  /* Message row */
+  .message-row {
+    display: flex; padding: 16px 20px; gap: 12px;
+    max-width: calc(var(--max-w) + 80px);
+    margin: 0 auto; width: 100%;
+  }
+  .message-row.bot-row { border-top: 1px solid var(--border-soft); transition: border-color .2s; }
+
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0; margin-top: 3px; font-weight: 600;
+  }
+  .avatar.user { background: var(--navy); color: #fff; transition: background .2s; }
+  .avatar.bot  { background: var(--red);  color: #fff; font-size: 14px; }
+
+  .message-content { flex: 1; min-width: 0; }
+  .message-author {
+    font-size: 11px; font-weight: 600; margin-bottom: 4px;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
+    transition: color .2s;
+  }
+  .message-text {
+    color: var(--text); white-space: pre-wrap; word-break: break-word;
+    font-size: 15px; transition: color .2s;
+  }
+  .message-text.user-text {
+    background: var(--user-bubble); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 10px 14px;
+    display: inline-block; max-width: 100%;
+    transition: background .2s, border-color .2s;
+  }
+
+  /* Sources */
+  .sources-block {
+    margin-top: 12px; display: flex; flex-wrap: wrap;
+    gap: 6px; align-items: center;
+  }
+  .sources-label {
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .06em;
+    width: 100%; margin-bottom: 2px; transition: color .2s;
+  }
+  .source-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--bg-sub); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 11px;
+    font-size: 12px; color: var(--navy); text-decoration: none;
+    transition: background .15s, border-color .15s, color .15s;
+    cursor: pointer; white-space: nowrap;
+    /* touch-friendly */
+    min-height: 32px;
+  }
+  .source-chip:hover, .source-chip:active {
+    background: var(--navy); color: #fff; border-color: var(--navy);
+  }
+
+  /* Typing */
+  .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+  .typing-dots span {
+    width: 6px; height: 6px; background: var(--text-muted);
+    border-radius: 50%; animation: dot-bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .2s; }
+  .typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes dot-bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+
+  /* Error */
+  .error-msg {
+    color: var(--red); background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: var(--radius); padding: 10px 14px; font-size: 14px;
+    transition: background .2s, border-color .2s;
+  }
+
+  /* ── Input area ──────────────────────────────────────────── */
+  .input-area {
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    flex-shrink: 0; background: var(--bg);
+    border-top: 1px solid var(--border);
+    transition: background .2s, border-color .2s;
+  }
+  .input-wrapper {
+    max-width: var(--max-w); margin: 0 auto;
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex; align-items: flex-end; gap: 8px; padding: 9px 10px;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  .input-wrapper:focus-within {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(27,47,94,.1);
+  }
+  #user-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-size: 16px; /* 16px prevents iOS zoom */
+    resize: none; max-height: 160px; line-height: 1.5; font-family: inherit;
+    transition: color .2s;
+  }
+  #user-input::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 6px; border: none;
+    background: var(--navy); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 15px;
+    transition: background .15s, opacity .15s;
+    /* touch-friendly */
+    min-width: 36px;
+  }
+  .send-btn:hover    { background: var(--navy-mid); }
+  .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  .input-footer {
+    text-align: center; font-size: 11px; color: var(--text-muted);
+    margin-top: 7px; max-width: var(--max-w);
+    margin-left: auto; margin-right: auto;
+    transition: color .2s;
+  }
+
+  /* ── Mobile ──────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .sidebar {
+      position: fixed; inset: 0; right: auto;
+      width: min(var(--sidebar-w), 85vw);
+      z-index: 100;
+      transform: translateX(-100%);
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+    }
+    .sidebar.open        { transform: translateX(0); }
+    .sidebar-close       { display: flex; }
+    .hamburger-btn       { display: flex; }
+    .topbar-logo span    { display: none; } /* hide text, keep icon */
+    .starter-grid        { grid-template-columns: 1fr; }
+    .message-row         { padding: 12px 14px; }
+    .empty-state         { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-icon">⚖️</div>
+        LigjetBot
+      </div>
+      <button class="sidebar-close" onclick="closeSidebar()" aria-label="Mbyll">✕</button>
+    </div>
+    <button class="new-chat-btn" onclick="newChat(); closeSidebar();">✏️ &nbsp;Bisedë e re</button>
+    <div class="sidebar-section">Pyetje shembull</div>
+    <div id="sidebar-suggestions"></div>
+  </aside>
+
+  <!-- Main panel -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openSidebar()" aria-label="Menu">☰</button>
+      <div class="topbar-logo">
+        <div class="topbar-icon">⚖️</div>
+        <span>LigjetBot</span>
+      </div>
+      <div class="topbar-divider"></div>
+      <div class="status-dot loading" id="status-dot"></div>
+      <span class="topbar-label" id="topbar-label">Duke u ngarkuar…</span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Ndrysho temën">🌙</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages" id="messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-logo">⚖️</div>
+        <h1>LigjetBot</h1>
+        <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
+        <div class="starter-grid" id="starter-grid"></div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="user-input"
+          rows="1"
+          placeholder="Shkruaj pyetjen tënde ligjore…"
+          disabled
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled title="Dërgo">↑</button>
+      </div>
+      <div class="input-footer">
+        LigjetBot mund të bëjë gabime. Për situata serioze konsultohuni me avokat.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let isLoading = false;
+
+  // ── Theme ─────────────────────────────────────────────────
+  const THEME_KEY = "ligjetbot-theme";
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const btn  = document.getElementById("theme-btn");
+    const meta = document.getElementById("theme-color-meta");
+    if (theme === "dark") {
+      btn.textContent  = "☀️";
+      btn.title        = "Modalitet i ndritshëm";
+      meta.content     = "#212121";
+    } else {
+      btn.textContent  = "🌙";
+      btn.title        = "Modalitet i errët";
+      meta.content     = "#ffffff";
+    }
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme");
+    const next    = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  }
+
+  // Apply saved theme immediately (prevents flash)
+  (function () {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) applyTheme(saved);
+    else if (window.matchMedia("(prefers-color-scheme: dark)").matches) applyTheme("dark");
+  })();
+
+  // ── Sidebar (mobile) ──────────────────────────────────────
+  function openSidebar() {
+    document.getElementById("sidebar").classList.add("open");
+    document.getElementById("sidebar-overlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function closeSidebar() {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebar-overlay").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  async function init() {
+    await loadSuggestions();
+    await pollStatus();
+  }
+
+  async function loadSuggestions() {
+    try {
+      const res  = await fetch("/api/suggestions");
+      const list = await res.json();
+
+      const sidebar = document.getElementById("sidebar-suggestions");
+      list.forEach(q => {
+        const btn = document.createElement("button");
+        btn.className   = "suggestion-btn";
+        btn.textContent = q;
+        btn.title       = q;
+        btn.onclick     = () => { submitQuestion(q); closeSidebar(); };
+        sidebar.appendChild(btn);
+      });
+
+      const grid = document.getElementById("starter-grid");
+      list.slice(0, 4).forEach(q => {
+        const card = document.createElement("button");
+        card.className   = "starter-card";
+        card.textContent = q;
+        card.onclick     = () => submitQuestion(q);
+        grid.appendChild(card);
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  async function pollStatus() {
+    try {
+      const res  = await fetch("/api/status");
+      const data = await res.json();
+      const dot   = document.getElementById("status-dot");
+      const label = document.getElementById("topbar-label");
+      const input = document.getElementById("user-input");
+      const btn   = document.getElementById("send-btn");
+
+      if (data.ready) {
+        dot.className     = "status-dot ready";
+        label.textContent = "Gati";
+        input.disabled    = false;
+        btn.disabled      = false;
+      } else if (data.error) {
+        dot.className     = "status-dot error";
+        label.textContent = "Gabim: " + data.error;
+      } else {
+        setTimeout(pollStatus, 2000);
+      }
+    } catch (e) {
+      setTimeout(pollStatus, 3000);
+    }
+  }
+
+  // ── New chat ──────────────────────────────────────────────
+  function newChat() {
+    const messages = document.getElementById("messages");
+    messages.innerHTML = `
+      <div class="empty-state" id="empty-state">
+        <div class="empty-logo">⚖️</div>
+        <h1>LigjetBot</h1>
+        <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
+        <div class="starter-grid" id="starter-grid"></div>
+      </div>`;
+
+    const grid = document.getElementById("starter-grid");
+    document.querySelectorAll(".suggestion-btn").forEach((b, i) => {
+      if (i < 4) {
+        const card = document.createElement("button");
+        card.className   = "starter-card";
+        card.textContent = b.title;
+        card.onclick     = () => submitQuestion(b.title);
+        grid.appendChild(card);
+      }
+    });
+  }
+
+  // ── Send ──────────────────────────────────────────────────
+  function sendMessage() {
+    const input = document.getElementById("user-input");
+    const text  = input.value.trim();
+    if (!text || isLoading) return;
+    input.value = "";
+    autoResize(input);
+    submitQuestion(text);
+  }
+
+  async function submitQuestion(question) {
+    if (isLoading) return;
+
+    const emptyState = document.getElementById("empty-state");
+    if (emptyState) emptyState.remove();
+
+    appendMessage("user", question);
+    const typingId = appendTyping();
+
+    isLoading = true;
+    document.getElementById("send-btn").disabled = true;
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: question }),
+      });
+
+      removeTyping(typingId);
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        appendError(data.error || "Gabim i panjohur.");
+      } else {
+        appendBotMessage(data.answer, data.sources);
+      }
+    } catch (err) {
+      removeTyping(typingId);
+      appendError("Gabim rrjeti: " + err.message);
+    } finally {
+      isLoading = false;
+      document.getElementById("send-btn").disabled = false;
+    }
+  }
+
+  // ── DOM helpers ───────────────────────────────────────────
+  function appendMessage(role, text) {
+    const messages = document.getElementById("messages");
+    const row      = document.createElement("div");
+    const isUser   = role === "user";
+    row.className  = "message-row" + (isUser ? "" : " bot-row");
+    row.innerHTML  = `
+      <div class="avatar ${isUser ? "user" : "bot"}">${isUser ? "U" : "⚖"}</div>
+      <div class="message-content">
+        <div class="message-author">${isUser ? "Ju" : "LigjetBot"}</div>
+        <div class="message-text ${isUser ? "user-text" : ""}">${escapeHtml(text)}</div>
+      </div>`;
+    messages.appendChild(row);
+    scrollBottom();
+  }
+
+  function appendBotMessage(answer, sources) {
+    const messages = document.getElementById("messages");
+    const row      = document.createElement("div");
+    row.className  = "message-row bot-row";
+
+    let sourcesHtml = "";
+    if (sources && sources.length > 0) {
+      const chips = sources.map(s => {
+        const label = escapeHtml(s.label);
+        const page  = s.page ? `Faqe ${s.page}` : "";
+        const title = [label, page].filter(Boolean).join(" · ");
+        if (s.url) {
+          return `<a class="source-chip" href="${escapeHtml(s.url)}" target="_blank" title="${title}">📌 ${label}${page ? ` <span style="opacity:.65">· ${page}</span>` : ""}</a>`;
+        }
+        return `<span class="source-chip">📌 ${title}</span>`;
+      }).join("");
+      sourcesHtml = `<div class="sources-block"><span class="sources-label">Burimet ligjore</span>${chips}</div>`;
+    }
+
+    row.innerHTML = `
+      <div class="avatar bot">⚖</div>
+      <div class="message-content">
+        <div class="message-author">LigjetBot</div>
+        <div class="message-text">${escapeHtml(answer)}</div>
+        ${sourcesHtml}
+      </div>`;
+    messages.appendChild(row);
+    scrollBottom();
+  }
+
+  function appendTyping() {
+    const messages = document.getElementById("messages");
+    const row      = document.createElement("div");
+    row.className  = "message-row bot-row";
+    const id       = "typing-" + Date.now();
+    row.id         = id;
+    row.innerHTML  = `
+      <div class="avatar bot">⚖</div>
+      <div class="message-content">
+        <div class="message-author">LigjetBot</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>`;
+    messages.appendChild(row);
+    scrollBottom();
+    return id;
+  }
+
+  function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function appendError(msg) {
+    const messages = document.getElementById("messages");
+    const row      = document.createElement("div");
+    row.className  = "message-row bot-row";
+    row.innerHTML  = `
+      <div class="avatar bot">⚖</div>
+      <div class="message-content">
+        <div class="message-author">LigjetBot</div>
+        <div class="error-msg">⚠️ ${escapeHtml(msg)}</div>
+      </div>`;
+    messages.appendChild(row);
+    scrollBottom();
+  }
+
+  function scrollBottom() {
+    const m = document.getElementById("messages");
+    m.scrollTop = m.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // ── Textarea auto-resize ──────────────────────────────────
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }
+
+  const textarea = document.getElementById("user-input");
+
+  textarea.addEventListener("input", function () { autoResize(this); });
+
+  textarea.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // iOS: scroll to bottom when keyboard appears so input stays visible
+  textarea.addEventListener("focus", () => {
+    setTimeout(() => scrollBottom(), 300);
+  });
+
+  init();
+</script>
+</body>
+</html>

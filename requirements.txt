@@ -1,5 +1,5 @@
 # ============================================================
-# LigjetBot - Dependencies
+# LIGJBOT - Dependencies
 # Faza 1: HuggingFace Embeddings (FREE, local)
 # Faza 2: Groq Llama 3.3 (LLM)
 # Vector DB: FAISS (local)

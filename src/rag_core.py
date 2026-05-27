@@ -1,7 +1,7 @@
 """
 ====================================================
 FAZA 2: RAG CORE — Python Q&A via Gemini
-LigjetBot - Albanian Legal RAG System
+LIGJBOT - Albanian Legal RAG System
 ====================================================
 
 Stack:
@@ -47,14 +47,16 @@ except ImportError as e:
 
 # ── Config ─────────────────────────────────────────────────────────────────
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
-LLM_MODEL         = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_MODEL         = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
 EMBEDDING_MODEL   = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-large")
 VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH", "./vector_store/faiss_index")
 TOP_K_RESULTS     = int(os.getenv("TOP_K_RESULTS", 5))
 TEMPERATURE       = float(os.getenv("TEMPERATURE", 0.1))
+MAX_TOKENS        = int(os.getenv("MAX_TOKENS", 512))
+CONTEXT_CHARS_PER_CHUNK = int(os.getenv("CONTEXT_CHARS_PER_CHUNK", 800))
 
 # ── System Prompt ──────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """Ti je LigjetBot — asistenti juridik i qytetareve shqiptare.
+SYSTEM_PROMPT = """Ti je LIGJBOT — asistenti juridik i qytetareve shqiptare.
 
 MISIONI YT:
 Ndihmon qytetaret shqiptare te kuptojne te drejtat dhe detyrimet e tyre ligjore,
@@ -77,7 +79,7 @@ FORMATI I PERGJIGJES:
 KUJDES:
 - Mos shpik informacion qe nuk eshte ne kontekst
 - Mos jep keshilla per vepra penale
-- Gjithmone kujtoje perdoruesin se LigjetBot eshte informues, jo zevendesues i avokatit
+- Gjithmone kujtoje perdoruesin se LIGJBOT eshte informues, jo zevendesues i avokatit
 """
 
 
@@ -85,9 +87,9 @@ KUJDES:
 # RAG ENGINE
 # ══════════════════════════════════════════════════════════════════════════
 
-class LigjetBotRAG:
+class LIGJBOTRAG:
     """
-    RAG Engine kryesor i LigjetBot.
+    RAG Engine kryesor i LIGJBOT.
     Menaxhon FAISS search + Gemini generation.
     """
 
@@ -101,7 +103,7 @@ class LigjetBotRAG:
         """Ngarkon vector store dhe inicializon Gemini LLM."""
 
         print(f"\n{Fore.CYAN}{'='*55}")
-        print(f"  LigjetBot — Asistenti Juridik Shqiptar")
+        print(f"  LIGJBOT — Asistenti Juridik Shqiptar")
         print(f"  Faza 2: RAG Core me Groq {LLM_MODEL}")
         print(f"{'='*55}{Style.RESET_ALL}\n")
 
@@ -143,12 +145,12 @@ class LigjetBotRAG:
             model=LLM_MODEL,
             api_key=GROQ_API_KEY,
             temperature=TEMPERATURE,
-            max_tokens=1024,
+            max_tokens=MAX_TOKENS,
         )
         print(f"{Fore.GREEN}✅ Groq {LLM_MODEL} i lidhur{Style.RESET_ALL}")
 
         self._initialized = True
-        print(f"\n{Fore.GREEN}🎯 LigjetBot eshte gati! Shkruaj pyetjen tend.{Style.RESET_ALL}")
+        print(f"\n{Fore.GREEN}🎯 LIGJBOT eshte gati! Shkruaj pyetjen tend.{Style.RESET_ALL}")
         print(f"{Fore.CYAN}💡 Shkruaj 'exit' ose 'quit' per te dale.{Style.RESET_ALL}\n")
         return True
 
@@ -185,6 +187,9 @@ class LigjetBotRAG:
             # Hiq header metadata nga content per te evituar duplikime
             if "---" in content:
                 content = content.split("---", 1)[-1].strip()
+            # Limit context size per chunk for faster responses
+            if len(content) > CONTEXT_CHARS_PER_CHUNK:
+                content = content[:CONTEXT_CHARS_PER_CHUNK].rstrip() + "..."
 
             header = f"[BURIMI {i}] {law_num}"
             if article:
@@ -229,7 +234,7 @@ class LigjetBotRAG:
             Dict me: answer, sources, chunks_used
         """
         if not self._initialized:
-            return {"error": "LigjetBot nuk eshte inicializuar. Thirr initialize() me pare."}
+            return {"error": "LIGJBOT nuk eshte inicializuar. Thirr initialize() me pare."}
 
         # ── Step 1: Semantic Search ───────────────────────────────────────
         relevant_docs = self.search_relevant_chunks(question)
@@ -309,8 +314,8 @@ DEMO_QUERIES = [
 # INTERACTIVE CHAT
 # ══════════════════════════════════════════════════════════════════════════
 
-def run_interactive_chat(bot: LigjetBotRAG):
-    """Chat interaktiv me LigjetBot."""
+def run_interactive_chat(bot: LIGJBOTRAG):
+    """Chat interaktiv me LIGJBOT."""
 
     print(f"{Fore.CYAN}╔══════════════════════════════════════════════════════╗")
     print(f"║           LIGJETBOT — Chat Interaktiv                ║")
@@ -356,7 +361,7 @@ def run_interactive_chat(bot: LigjetBotRAG):
             print(f"\n{Fore.RED}❌ Error: {e}{Style.RESET_ALL}\n")
 
 
-def run_demo(bot: LigjetBotRAG):
+def run_demo(bot: LIGJBOTRAG):
     """Demo me pyetje te paracaktuara."""
 
     print(f"\n{Fore.CYAN}{'='*55}")
@@ -382,7 +387,7 @@ def run_demo(bot: LigjetBotRAG):
 def main():
     global TOP_K_RESULTS
     parser = argparse.ArgumentParser(
-        description="LigjetBot RAG Core — Faza 2",
+        description="LIGJBOT RAG Core — Faza 2",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Shembuj perdorimi:
@@ -415,7 +420,7 @@ Shembuj perdorimi:
         TOP_K_RESULTS = args.topk
 
     # Inicializo bot
-    bot = LigjetBotRAG()
+    bot = LIGJBOTRAG()
     if not bot.initialize():
         sys.exit(1)
 

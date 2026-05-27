@@ -1,11 +1,11 @@
 """
-LigjetBot — Flask Web Interface
+LIGJBOT — Flask Web Interface
 ChatGPT-style chat UI for the Albanian Legal RAG system.
 """
 
 import os
 import sys
-import json
+import time
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from dotenv import load_dotenv
@@ -15,14 +15,16 @@ load_dotenv()
 # Add src to path so rag_core can be imported
 sys.path.insert(0, str(Path(__file__).parent))
 
-from rag_core import LigjetBotRAG
+from rag_core import LIGJBOTRAG
 
 app = Flask(__name__)
 
 # Singleton RAG instance (loaded once at startup)
-bot = LigjetBotRAG()
+bot = LIGJBOTRAG()
 bot_ready = False
 bot_error = None
+answer_cache = {}
+FAST_MODE = os.getenv("FAST_MODE", "1") == "1"
 
 
 def init_bot():
@@ -63,7 +65,7 @@ def status():
 def chat():
     if not bot_ready:
         return jsonify({
-            "error": bot_error or "LigjetBot nuk është gati akoma."
+            "error": bot_error or "LIGJBOT nuk është gati akoma."
         }), 503
 
     data = request.get_json()
@@ -73,9 +75,43 @@ def chat():
         return jsonify({"error": "Mesazhi është bosh."}), 400
 
     try:
-        result = bot.ask(question)
-        if "error" in result:
-            return jsonify({"error": result["error"]}), 500
+        start = time.perf_counter()
+        cache_key = question.lower()
+        if cache_key in answer_cache:
+            cached = dict(answer_cache[cache_key])
+            cached["cached"] = True
+            return jsonify(cached)
+
+        if FAST_MODE:
+            # Fast path: retrieval-only response to avoid long LLM latency/timeouts.
+            docs = bot.search_relevant_chunks(question)
+            if not docs:
+                return jsonify({
+                    "answer": "Nuk gjeta informacion relevant ne ligjet e indexuara per kete pyetje.",
+                    "sources": [],
+                    "chunks_used": 0,
+                    "cached": False,
+                    "response_ms": int((time.perf_counter() - start) * 1000),
+                    "mode": "fast",
+                })
+            snippets = []
+            for i, d in enumerate(docs[:2], 1):
+                content = d.page_content
+                if content.startswith("passage: "):
+                    content = content[9:]
+                if "---" in content:
+                    content = content.split("---", 1)[-1].strip()
+                clean = " ".join(content.split())
+                snippets.append(f"{i}. {clean[:280]}...")
+            result = {
+                "answer": "Nga ligjet e indexuara gjeta keto pjese relevante:\n\n" + "\n".join(snippets),
+                "docs": docs,
+                "chunks_used": len(docs),
+            }
+        else:
+            result = bot.ask(question)
+            if "error" in result:
+                return jsonify({"error": result["error"]}), 500
 
         # Build structured sources list for clickable links
         structured_sources = []
@@ -99,11 +135,17 @@ def chat():
                     "url": f"/pdfs/{src_file}#page={page}" if src_file else None,
                 })
 
-        return jsonify({
+        payload = {
             "answer": result["answer"],
             "sources": structured_sources,
             "chunks_used": result["chunks_used"],
-        })
+            "cached": False,
+            "response_ms": int((time.perf_counter() - start) * 1000),
+            "mode": "fast" if FAST_MODE else "llm",
+        }
+        # lightweight in-memory cache for repeated questions
+        answer_cache[cache_key] = payload
+        return jsonify(payload)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -123,6 +165,6 @@ def suggestions():
 
 
 if __name__ == "__main__":
-    print("🚀 Duke nisur LigjetBot Web Interface...")
+    print("🚀 Duke nisur LIGJBOT Web Interface...")
     init_bot()
-    app.run(debug=False, host="0.0.0.0", port=5001)
+    app.run(debug=False, host="0.0.0.0", port=5001, threaded=True)

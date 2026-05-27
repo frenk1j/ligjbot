@@ -1,60 +1,71 @@
 <!DOCTYPE html>
-<html lang="sq" data-theme="light">
+<html lang="sq" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="theme-color" content="#ffffff" id="theme-color-meta"/>
-<title>LigjetBot — Asistenti Juridik</title>
+<meta name="theme-color" content="#060b16" id="theme-color-meta"/>
+<title>LIGJBOT — Asistenti Juridik</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── Tokens: light ───────────────────────────────────────── */
   :root {
-    --navy:        #1b2f5e;
-    --navy-dark:   #0f1d3d;
-    --navy-mid:    #243672;
-    --red:         #c0281e;
-    --red-hover:   #a81f16;
-
-    --bg:          #ffffff;
-    --bg-sub:      #f8f8f7;
-    --bg-input:    #ffffff;
-    --border:      #e2e0d8;
-    --border-soft: #f0efeb;
-    --text:        #2c2c2a;
-    --text-muted:  #9b9a93;
-    --text-light:  #5c5b56;
-    --user-bubble: #f8f8f7;
-    --error-bg:    #fdf2f1;
-    --error-border:#f5c8c5;
-
-    --sidebar-bg:  #0f1d3d;
-    --sidebar-w:   256px;
+    --gold:        #c9a227;
+    --gold-soft:   #e4c76b;
+    --red:         #9b2c2c;
+    --sidebar-w:   280px;
     --radius:      8px;
     --radius-lg:   12px;
     --max-w:       700px;
   }
 
-  /* ── Tokens: dark ────────────────────────────────────────── */
-  [data-theme="dark"] {
-    --bg:          #212121;
-    --bg-sub:      #2f2f2f;
-    --bg-input:    #2f2f2f;
-    --border:      #444;
-    --border-soft: #383838;
-    --text:        #ececec;
-    --text-muted:  #8e8ea0;
-    --text-light:  #a0a0b0;
-    --user-bubble: #2f2f2f;
-    --error-bg:    rgba(192,40,30,.12);
-    --error-border:rgba(192,40,30,.35);
+  /* Light mode */
+  [data-theme="light"] {
+    --navy:        #0f1d3d;
+    --navy-dark:   #0a1428;
+    --navy-mid:    #1a3058;
+    --bg:          #f3f4f6;
+    --bg-sub:      #ffffff;
+    --bg-input:    #ffffff;
+    --border:      #d8dde8;
+    --border-soft: #e8ecf3;
+    --text:        #1a2332;
+    --text-muted:  #5f6b7c;
+    --text-light:  #3d4a5c;
+    --heading:     #0f1d3d;
+    --user-bubble: #eef1f7;
+    --error-bg:    #fef2f2;
+    --error-border:#fecaca;
+    --sidebar-bg:  #0f1d3d;
+    --sidebar-text:#e8ecf3;
+    --btn-primary: #0f1d3d;
+    --btn-primary-hover: #1a3058;
+    --grid-line:   rgba(15,29,61,.06);
+  }
 
-    --sidebar-bg:  #171717;
-    --navy:        #4a7fd4;
-    --navy-dark:   #3a6bc0;
-    --navy-mid:    #5a8fe4;
+  /* Dark mode */
+  [data-theme="dark"] {
+    --navy:        #1e3a6e;
+    --navy-dark:   #0a1224;
+    --navy-mid:    #2a4f8f;
+    --bg:          #0b1018;
+    --bg-sub:      #121a28;
+    --bg-input:    #121a28;
+    --border:      #2a3548;
+    --border-soft: #1a2436;
+    --text:        #e8edf5;
+    --text-muted:  #94a3b8;
+    --text-light:  #b8c5d6;
+    --heading:     #f0d78c;
+    --user-bubble: #162033;
+    --error-bg:    rgba(155,44,44,.2);
+    --error-border:#9b2c2c;
+    --sidebar-bg:  #070d16;
+    --sidebar-text:#e8edf5;
+    --btn-primary: #c9a227;
+    --btn-primary-hover: #e4c76b;
+    --grid-line:   rgba(201,162,39,.07);
   }
 
   html {
@@ -98,15 +109,24 @@
   /* ── Sidebar ─────────────────────────────────────────────── */
   .sidebar {
     width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
     background: var(--sidebar-bg);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    overflow-y: auto;
+    overflow: hidden;
     -webkit-overflow-scrolling: touch;
-    transition: transform .25s ease;
-    /* iOS safe area left */
+    transition: width .25s ease, min-width .25s ease, transform .25s ease, opacity .2s ease;
     padding-left: env(safe-area-inset-left);
+    border-right: 1px solid rgba(255,255,255,.06);
+  }
+
+  .app.sidebar-collapsed .sidebar {
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    border-right: none;
   }
 
   .sidebar-header {
@@ -124,28 +144,46 @@
     gap: 10px;
     font-weight: 600;
     font-size: 15px;
-    color: #fff;
+    color: var(--sidebar-text);
+    min-width: 0;
   }
 
   .sidebar-icon {
-    width: 34px; height: 34px;
-    background: var(--red);
-    border-radius: 6px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 17px; flex-shrink: 0;
+    flex-shrink: 0;
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 12px rgba(201,162,39,.25);
+    overflow: hidden;
+  }
+  .logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
   }
 
   .sidebar-close {
-    display: none;
-    background: none; border: none;
-    color: rgba(255,255,255,.5);
-    font-size: 20px; cursor: pointer; padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    color: rgba(255,255,255,.7);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px 8px;
     line-height: 1;
+    border-radius: 6px;
+    flex-shrink: 0;
   }
+  .sidebar-close:hover { background: rgba(255,255,255,.14); color: #fff; }
 
   .new-chat-btn {
     display: flex; align-items: center; gap: 8px;
-    margin: 12px 12px 0;
+    margin: 12px 12px 10px;
     padding: 10px 12px;
     border-radius: var(--radius);
     border: 1px solid rgba(255,255,255,.15);
@@ -165,7 +203,61 @@
     font-size: 10px; font-weight: 600;
     color: rgba(255,255,255,.35);
     text-transform: uppercase; letter-spacing: .07em;
-    padding: 20px 16px 6px;
+    padding: 8px 16px 8px;
+  }
+
+  .history-list {
+    padding: 0 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .history-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(255,255,255,.82);
+    border-radius: 10px;
+    padding: 10px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.35;
+    min-height: 48px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .history-item:hover {
+    background: rgba(255,255,255,.08);
+    color: #fff;
+  }
+  .history-item.active {
+    background: rgba(255,255,255,.12);
+    border-color: rgba(255,255,255,.18);
+    color: #fff;
+  }
+  .history-title {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+  .history-sub {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    opacity: .65;
+    margin-top: 2px;
   }
 
   .suggestion-btn {
@@ -191,6 +283,10 @@
     overflow: hidden; background: var(--bg);
     transition: background .2s;
     min-width: 0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 
   /* ── Topbar ──────────────────────────────────────────────── */
@@ -206,27 +302,30 @@
     height: calc(52px + env(safe-area-inset-top));
   }
 
-  .hamburger-btn {
-    display: none;
-    background: none; border: none; color: var(--text-light);
-    font-size: 20px; cursor: pointer; padding: 6px;
-    border-radius: 6px; line-height: 1;
-    min-width: 40px; min-height: 40px;
-    align-items: center; justify-content: center;
+  .sidebar-toggle-btn {
+    display: flex;
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    line-height: 1;
+    min-width: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    font-family: inherit;
   }
-  .hamburger-btn:hover { background: var(--bg-sub); }
+  .hamburger-btn { display: none; }
+  .sidebar-toggle-btn:hover { background: var(--border-soft); border-color: var(--gold); }
 
   .topbar-logo {
     display: flex; align-items: center; gap: 8px;
-    font-size: 14px; font-weight: 600; color: var(--navy);
+    font-size: 15px; font-weight: 600; color: var(--heading);
     transition: color .2s;
-  }
-  .topbar-icon {
-    width: 28px; height: 28px; background: var(--navy);
-    border-radius: 5px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; transition: background .2s;
   }
   .topbar-divider {
     width: 1px; height: 18px; background: var(--border); margin: 0 2px;
@@ -256,7 +355,7 @@
     transition: background .15s, border-color .15s, color .15s;
     flex-shrink: 0;
   }
-  .theme-btn:hover { background: var(--bg-sub); border-color: var(--navy); color: var(--navy); }
+  .theme-btn:hover { background: var(--bg-sub); border-color: var(--gold); color: var(--heading); }
 
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
@@ -277,29 +376,27 @@
     align-items: center; justify-content: center;
     min-height: 100%; gap: 14px; padding: 32px 24px; text-align: center;
   }
-  .empty-logo {
-    width: 60px; height: 60px; background: var(--navy);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px; transition: background .2s;
+  .empty-state h1 {
+    font-size: 26px; font-weight: 700; color: var(--heading);
+    letter-spacing: -.02em;
   }
-  .empty-state h1 { font-size: 22px; font-weight: 600; color: var(--navy); transition: color .2s; }
-  .empty-state p  { color: var(--text-light); max-width: 380px; font-size: 14px; transition: color .2s; }
+  .empty-state p  { color: var(--text-muted); max-width: 420px; font-size: 14px; line-height: 1.55; }
 
   .starter-grid {
     display: grid; grid-template-columns: repeat(2, 1fr);
     gap: 8px; max-width: 500px; width: 100%; margin-top: 8px;
   }
   .starter-card {
-    background: var(--bg); border: 1px solid var(--border);
+    background: var(--bg-sub); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 12px 14px;
-    cursor: pointer; font-size: 13px; color: var(--navy);
-    text-align: left; transition: border-color .15s, background .15s, color .2s;
+    cursor: pointer; font-size: 13px; color: var(--text);
+    text-align: left; transition: border-color .15s, background .15s, box-shadow .15s;
     line-height: 1.4; font-family: inherit;
     min-height: 44px;
   }
   .starter-card:hover, .starter-card:active {
-    border-color: var(--navy); background: var(--bg-sub);
+    border-color: var(--gold); background: var(--bg-sub);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
   }
 
   /* Message row */
@@ -315,14 +412,34 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; flex-shrink: 0; margin-top: 3px; font-weight: 600;
   }
-  .avatar.user { background: var(--navy); color: #fff; transition: background .2s; }
-  .avatar.bot  { background: var(--red);  color: #fff; font-size: 14px; }
+  .avatar.user { background: var(--btn-primary); color: #fff; }
+  .avatar.bot  {
+    background: var(--bg-sub);
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--gold);
+  }
 
   .message-content { flex: 1; min-width: 0; }
   .message-author {
     font-size: 11px; font-weight: 600; margin-bottom: 4px;
     color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
     transition: color .2s;
+  }
+  .meta-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .meta-chip {
+    font-size: 11px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    background: var(--bg-sub);
+    border-radius: 999px;
+    padding: 2px 8px;
   }
   .message-text {
     color: var(--text); white-space: pre-wrap; word-break: break-word;
@@ -349,14 +466,14 @@
     display: inline-flex; align-items: center; gap: 4px;
     background: var(--bg-sub); border: 1px solid var(--border);
     border-radius: 20px; padding: 5px 11px;
-    font-size: 12px; color: var(--navy); text-decoration: none;
+    font-size: 12px; color: var(--heading); text-decoration: none;
     transition: background .15s, border-color .15s, color .15s;
     cursor: pointer; white-space: nowrap;
     /* touch-friendly */
     min-height: 32px;
   }
   .source-chip:hover, .source-chip:active {
-    background: var(--navy); color: #fff; border-color: var(--navy);
+    background: var(--btn-primary); color: #fff; border-color: var(--btn-primary);
   }
 
   /* Typing */
@@ -393,8 +510,8 @@
     transition: border-color .2s, box-shadow .2s, background .2s;
   }
   .input-wrapper:focus-within {
-    border-color: var(--navy);
-    box-shadow: 0 0 0 3px rgba(27,47,94,.1);
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,162,39,.15);
   }
   #user-input {
     flex: 1; background: none; border: none; outline: none;
@@ -406,14 +523,14 @@
 
   .send-btn {
     width: 36px; height: 36px; border-radius: 6px; border: none;
-    background: var(--navy); color: #fff; cursor: pointer;
+    background: var(--btn-primary); color: #fff; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; font-size: 15px;
     transition: background .15s, opacity .15s;
     /* touch-friendly */
     min-width: 36px;
   }
-  .send-btn:hover    { background: var(--navy-mid); }
+  .send-btn:hover    { background: var(--btn-primary-hover); }
   .send-btn:disabled { opacity: .35; cursor: not-allowed; }
 
   .input-footer {
@@ -428,15 +545,23 @@
     .sidebar {
       position: fixed; inset: 0; right: auto;
       width: min(var(--sidebar-w), 85vw);
+      min-width: min(var(--sidebar-w), 85vw);
       z-index: 100;
       transform: translateX(-100%);
+      opacity: 1;
+      pointer-events: auto;
       padding-top: env(safe-area-inset-top);
       padding-left: env(safe-area-inset-left);
     }
-    .sidebar.open        { transform: translateX(0); }
-    .sidebar-close       { display: flex; }
-    .hamburger-btn       { display: flex; }
-    .topbar-logo span    { display: none; } /* hide text, keep icon */
+    .app.sidebar-collapsed .sidebar {
+      width: min(var(--sidebar-w), 85vw);
+      min-width: min(var(--sidebar-w), 85vw);
+      transform: translateX(-100%);
+      opacity: 1;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-toggle-btn { display: none; }
+    .hamburger-btn { display: flex; }
     .starter-grid        { grid-template-columns: 1fr; }
     .message-row         { padding: 12px 14px; }
     .empty-state         { padding: 24px 16px; }
@@ -447,20 +572,20 @@
 <div class="app">
 
   <!-- Mobile sidebar overlay -->
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
 
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <div class="sidebar-icon">⚖️</div>
-        LigjetBot
+        <div class="sidebar-icon"><img class="logo-img" src="/static/ligjbot-logo.png" alt="LigjBot logo"/></div>
+        LIGJBOT
       </div>
-      <button class="sidebar-close" onclick="closeSidebar()" aria-label="Mbyll">✕</button>
+      <button class="sidebar-close" onclick="collapseSidebar()" aria-label="Mbyll sidebar">✕</button>
     </div>
-    <button class="new-chat-btn" onclick="newChat(); closeSidebar();">✏️ &nbsp;Bisedë e re</button>
-    <div class="sidebar-section">Pyetje shembull</div>
-    <div id="sidebar-suggestions"></div>
+    <button class="new-chat-btn" onclick="newChat(); collapseSidebar();">✏️ &nbsp;Bisedë e re</button>
+    <div class="sidebar-section">Chats</div>
+    <div class="history-list" id="history-list"></div>
   </aside>
 
   <!-- Main panel -->
@@ -468,10 +593,10 @@
 
     <!-- Topbar -->
     <div class="topbar">
-      <button class="hamburger-btn" onclick="openSidebar()" aria-label="Menu">☰</button>
+      <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle" onclick="toggleSidebarDesktop()" aria-label="Hap/mbyll sidebar">☰</button>
+      <button type="button" class="hamburger-btn" onclick="openSidebarMobile()" aria-label="Menu">☰</button>
       <div class="topbar-logo">
-        <div class="topbar-icon">⚖️</div>
-        <span>LigjetBot</span>
+        <span>LIGJBOT</span>
       </div>
       <div class="topbar-divider"></div>
       <div class="status-dot loading" id="status-dot"></div>
@@ -482,8 +607,7 @@
     <!-- Messages -->
     <div class="messages" id="messages">
       <div class="empty-state" id="empty-state">
-        <div class="empty-logo">⚖️</div>
-        <h1>LigjetBot</h1>
+        <h1>LIGJBOT</h1>
         <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
         <div class="starter-grid" id="starter-grid"></div>
       </div>
@@ -501,7 +625,7 @@
         <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled title="Dërgo">↑</button>
       </div>
       <div class="input-footer">
-        LigjetBot mund të bëjë gabime. Për situata serioze konsultohuni me avokat.
+        LIGJBOT mund të bëjë gabime. Për situata serioze konsultohuni me avokat.
       </div>
     </div>
 
@@ -510,9 +634,13 @@
 
 <script>
   let isLoading = false;
+  let activeChatId = null;
+  let chats = [];
+  let suggestionQuestions = [];
+  const HISTORY_KEY = "LIGJBOT-history";
 
   // ── Theme ─────────────────────────────────────────────────
-  const THEME_KEY = "ligjetbot-theme";
+  const THEME_KEY = "LIGJBOT-theme";
 
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -521,11 +649,11 @@
     if (theme === "dark") {
       btn.textContent  = "☀️";
       btn.title        = "Modalitet i ndritshëm";
-      meta.content     = "#212121";
+      meta.content     = "#0b1018";
     } else {
       btn.textContent  = "🌙";
       btn.title        = "Modalitet i errët";
-      meta.content     = "#ffffff";
+      meta.content     = "#f3f4f6";
     }
   }
 
@@ -543,41 +671,91 @@
     else if (window.matchMedia("(prefers-color-scheme: dark)").matches) applyTheme("dark");
   })();
 
-  // ── Sidebar (mobile) ──────────────────────────────────────
-  function openSidebar() {
+  const SIDEBAR_KEY = "LIGJBOT-sidebar-collapsed";
+
+  function isMobile() {
+    return window.innerWidth <= 640;
+  }
+
+  function setSidebarCollapsed(collapsed) {
+    document.querySelector(".app").classList.toggle("sidebar-collapsed", collapsed);
+    if (!isMobile()) {
+      localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+    }
+  }
+
+  function toggleSidebarDesktop() {
+    if (isMobile()) return;
+    const app = document.querySelector(".app");
+    setSidebarCollapsed(!app.classList.contains("sidebar-collapsed"));
+  }
+
+  function collapseSidebar() {
+    if (isMobile()) {
+      closeSidebarMobile();
+    } else {
+      setSidebarCollapsed(true);
+    }
+  }
+
+  function openSidebarMobile() {
+    if (!isMobile()) {
+      setSidebarCollapsed(false);
+      return;
+    }
     document.getElementById("sidebar").classList.add("open");
     document.getElementById("sidebar-overlay").classList.add("open");
     document.body.style.overflow = "hidden";
   }
-  function closeSidebar() {
+
+  function closeSidebarMobile() {
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebar-overlay").classList.remove("open");
     document.body.style.overflow = "";
   }
 
+  function closeSidebar() {
+    collapseSidebar();
+  }
+
+  (function initSidebarState() {
+    if (!isMobile() && localStorage.getItem(SIDEBAR_KEY) === "1") {
+      setSidebarCollapsed(true);
+    }
+    window.addEventListener("resize", () => {
+      if (!isMobile()) closeSidebarMobile();
+    });
+  })();
+
   // ── Init ──────────────────────────────────────────────────
   async function init() {
+    loadHistory();
     await loadSuggestions();
     await pollStatus();
+    ensureActiveChat();
+    renderHistory();
   }
 
   async function loadSuggestions() {
     try {
       const res  = await fetch("/api/suggestions");
       const list = await res.json();
+      suggestionQuestions = Array.isArray(list) ? list : [];
 
       const sidebar = document.getElementById("sidebar-suggestions");
-      list.forEach(q => {
-        const btn = document.createElement("button");
-        btn.className   = "suggestion-btn";
-        btn.textContent = q;
-        btn.title       = q;
-        btn.onclick     = () => { submitQuestion(q); closeSidebar(); };
-        sidebar.appendChild(btn);
-      });
+      if (sidebar) {
+        list.forEach(q => {
+          const btn = document.createElement("button");
+          btn.className   = "suggestion-btn";
+          btn.textContent = q;
+          btn.title       = q;
+          btn.onclick     = () => { submitQuestion(q); closeSidebar(); };
+          sidebar.appendChild(btn);
+        });
+      }
 
       const grid = document.getElementById("starter-grid");
-      list.slice(0, 4).forEach(q => {
+      suggestionQuestions.slice(0, 4).forEach(q => {
         const card = document.createElement("button");
         card.className   = "starter-card";
         card.textContent = q;
@@ -614,25 +792,25 @@
 
   // ── New chat ──────────────────────────────────────────────
   function newChat() {
+    createNewChat();
     const messages = document.getElementById("messages");
     messages.innerHTML = `
       <div class="empty-state" id="empty-state">
-        <div class="empty-logo">⚖️</div>
-        <h1>LigjetBot</h1>
+        <h1>LIGJBOT</h1>
         <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
         <div class="starter-grid" id="starter-grid"></div>
       </div>`;
 
     const grid = document.getElementById("starter-grid");
-    document.querySelectorAll(".suggestion-btn").forEach((b, i) => {
-      if (i < 4) {
-        const card = document.createElement("button");
-        card.className   = "starter-card";
-        card.textContent = b.title;
-        card.onclick     = () => submitQuestion(b.title);
-        grid.appendChild(card);
-      }
+    suggestionQuestions.slice(0, 4).forEach((q) => {
+      const card = document.createElement("button");
+      card.className   = "starter-card";
+      card.textContent = q;
+      card.onclick     = () => submitQuestion(q);
+      grid.appendChild(card);
     });
+    persistHistory();
+    renderHistory();
   }
 
   // ── Send ──────────────────────────────────────────────────
@@ -658,11 +836,15 @@
     document.getElementById("send-btn").disabled = true;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: question }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       removeTyping(typingId);
       const data = await res.json();
@@ -670,11 +852,15 @@
       if (!res.ok || data.error) {
         appendError(data.error || "Gabim i panjohur.");
       } else {
-        appendBotMessage(data.answer, data.sources);
+        await appendBotMessage(data.answer, data.sources, data.response_ms, data.cached);
       }
     } catch (err) {
       removeTyping(typingId);
-      appendError("Gabim rrjeti: " + err.message);
+      if (err.name === "AbortError") {
+        appendError("Pergjigjja po vonon. Provo nje pyetje me te shkurter ose dergo perseri.");
+      } else {
+        appendError("Gabim rrjeti: " + err.message);
+      }
     } finally {
       isLoading = false;
       document.getElementById("send-btn").disabled = false;
@@ -688,16 +874,20 @@
     const isUser   = role === "user";
     row.className  = "message-row" + (isUser ? "" : " bot-row");
     row.innerHTML  = `
-      <div class="avatar ${isUser ? "user" : "bot"}">${isUser ? "U" : "⚖"}</div>
+      <div class="avatar ${isUser ? "user" : "bot"}">${isUser ? "U" : '<img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT logo"/>'}</div>
       <div class="message-content">
-        <div class="message-author">${isUser ? "Ju" : "LigjetBot"}</div>
+        <div class="message-author">${isUser ? "Ju" : "LIGJBOT"}</div>
         <div class="message-text ${isUser ? "user-text" : ""}">${escapeHtml(text)}</div>
       </div>`;
     messages.appendChild(row);
     scrollBottom();
+    upsertChatMessage({
+      role,
+      text,
+    });
   }
 
-  function appendBotMessage(answer, sources) {
+  async function appendBotMessage(answer, sources, responseMs, cached) {
     const messages = document.getElementById("messages");
     const row      = document.createElement("div");
     row.className  = "message-row bot-row";
@@ -716,15 +906,31 @@
       sourcesHtml = `<div class="sources-block"><span class="sources-label">Burimet ligjore</span>${chips}</div>`;
     }
 
+    const metaChips = `
+      <div class="meta-row">
+        ${responseMs ? `<span class="meta-chip">⚡ ${responseMs}ms</span>` : ""}
+        ${cached ? `<span class="meta-chip">Cache</span>` : ""}
+      </div>`;
+
     row.innerHTML = `
-      <div class="avatar bot">⚖</div>
+      <div class="avatar bot"><img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT logo"/></div>
       <div class="message-content">
-        <div class="message-author">LigjetBot</div>
-        <div class="message-text">${escapeHtml(answer)}</div>
+        <div class="message-author">LIGJBOT</div>
+        <div class="message-text" id="assistant-text-${Date.now()}"></div>
+        ${metaChips}
         ${sourcesHtml}
       </div>`;
     messages.appendChild(row);
+    const textEl = row.querySelector(".message-text");
+    await typeText(textEl, answer, 8);
     scrollBottom();
+    upsertChatMessage({
+      role: "assistant",
+      text: answer,
+      sources: sources || [],
+      responseMs: responseMs || null,
+      cached: !!cached,
+    });
   }
 
   function appendTyping() {
@@ -734,9 +940,9 @@
     const id       = "typing-" + Date.now();
     row.id         = id;
     row.innerHTML  = `
-      <div class="avatar bot">⚖</div>
+      <div class="avatar bot"><img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT logo"/></div>
       <div class="message-content">
-        <div class="message-author">LigjetBot</div>
+        <div class="message-author">LIGJBOT</div>
         <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>`;
     messages.appendChild(row);
@@ -754,13 +960,17 @@
     const row      = document.createElement("div");
     row.className  = "message-row bot-row";
     row.innerHTML  = `
-      <div class="avatar bot">⚖</div>
+      <div class="avatar bot"><img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT logo"/></div>
       <div class="message-content">
-        <div class="message-author">LigjetBot</div>
+        <div class="message-author">LIGJBOT</div>
         <div class="error-msg">⚠️ ${escapeHtml(msg)}</div>
       </div>`;
     messages.appendChild(row);
     scrollBottom();
+    upsertChatMessage({
+      role: "assistant",
+      error: msg,
+    });
   }
 
   function scrollBottom() {
@@ -774,6 +984,204 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  async function typeText(el, text, delayMs = 8) {
+    const safe = String(text || "");
+    if (!safe.length) {
+      el.textContent = "";
+      return;
+    }
+    let i = 0;
+    while (i < safe.length) {
+      // Render in small chunks to keep it smooth and fast
+      const step = i < 120 ? 1 : i < 400 ? 2 : 3;
+      el.textContent = safe.slice(0, i + step);
+      i += step;
+      // Keep scroll pinned while typing
+      scrollBottom();
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+
+  function escapeAttr(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function createNewChat() {
+    const id = "chat-" + Date.now();
+    activeChatId = id;
+    chats.unshift({
+      id,
+      title: "Bisedë e re",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: [],
+    });
+  }
+
+  function ensureActiveChat() {
+    if (!activeChatId || !chats.some(c => c.id === activeChatId)) {
+      if (!chats.length) createNewChat();
+      activeChatId = chats[0].id;
+    }
+  }
+
+  function upsertChatMessage(message) {
+    ensureActiveChat();
+    const chat = chats.find(c => c.id === activeChatId);
+    if (!chat) return;
+    chat.messages.push(message);
+    chat.updatedAt = Date.now();
+    if (chat.title === "Bisedë e re" && message.role === "user" && message.text) {
+      chat.title = message.text.slice(0, 48);
+    }
+    // keep latest active chat on top
+    chats.sort((a, b) => b.updatedAt - a.updatedAt);
+    persistHistory();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById("history-list");
+    if (!list) return;
+    list.innerHTML = "";
+    chats.slice(0, 25).forEach(chat => {
+      const btn = document.createElement("button");
+      btn.className = "history-item" + (chat.id === activeChatId ? " active" : "");
+      btn.title = chat.title;
+      const preview = chat.messages.find(m => m.role === "assistant" && m.text)?.text
+        || chat.messages.find(m => m.role === "user" && m.text)?.text
+        || "Bisedë e re";
+      btn.innerHTML = `
+        <span class="history-title">${escapeHtml(chat.title)}</span>
+        <span class="history-sub">${escapeHtml(preview.slice(0, 52))}</span>`;
+      btn.onclick = () => loadChat(chat.id);
+      list.appendChild(btn);
+    });
+  }
+
+  function loadChat(chatId) {
+    const chat = chats.find(c => c.id === chatId);
+    if (!chat) return;
+    activeChatId = chatId;
+    const messages = document.getElementById("messages");
+    messages.innerHTML = "";
+    if (!chat.messages.length) {
+      messages.innerHTML = `
+        <div class="empty-state" id="empty-state">
+          <h1>LIGJBOT</h1>
+          <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
+          <div class="starter-grid" id="starter-grid"></div>
+        </div>`;
+      const grid = document.getElementById("starter-grid");
+      suggestionQuestions.slice(0, 4).forEach((q) => {
+        const card = document.createElement("button");
+        card.className = "starter-card";
+        card.textContent = q;
+        card.onclick = () => submitQuestion(q);
+        grid.appendChild(card);
+      });
+      renderHistory();
+      closeSidebar();
+      return;
+    }
+    chat.messages.forEach(msg => {
+      if (msg.role === "user") {
+        renderStoredUser(msg.text || "");
+      } else if (msg.error) {
+        renderStoredError(msg.error);
+      } else {
+        renderStoredAssistant(msg);
+      }
+    });
+    renderHistory();
+    scrollBottom();
+    closeSidebar();
+  }
+
+  function renderStoredUser(text) {
+    const messages = document.getElementById("messages");
+    const row = document.createElement("div");
+    row.className = "message-row";
+    row.innerHTML = `
+      <div class="avatar user">U</div>
+      <div class="message-content">
+        <div class="message-author">Ju</div>
+        <div class="message-text user-text">${escapeHtml(text)}</div>
+      </div>`;
+    messages.appendChild(row);
+  }
+
+  function renderStoredAssistant(msg) {
+    const messages = document.getElementById("messages");
+    const row = document.createElement("div");
+    row.className = "message-row bot-row";
+    let sourcesHtml = "";
+    if (msg.sources && msg.sources.length > 0) {
+      const chips = msg.sources.map(s => {
+        const label = escapeHtml(s.label || "");
+        const page = s.page ? `Faqe ${s.page}` : "";
+        const title = [label, page].filter(Boolean).join(" · ");
+        if (s.url) {
+          return `<a class="source-chip" href="${escapeAttr(s.url)}" target="_blank" title="${escapeAttr(title)}">📌 ${label}${page ? ` <span style="opacity:.65">· ${page}</span>` : ""}</a>`;
+        }
+        return `<span class="source-chip">📌 ${escapeHtml(title)}</span>`;
+      }).join("");
+      sourcesHtml = `<div class="sources-block"><span class="sources-label">Burimet ligjore</span>${chips}</div>`;
+    }
+    row.innerHTML = `
+      <div class="avatar bot"><img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT logo"/></div>
+      <div class="message-content">
+        <div class="message-author">LIGJBOT</div>
+        <div class="message-text">${escapeHtml(msg.text || "")}</div>
+        <div class="meta-row">
+          ${msg.responseMs ? `<span class="meta-chip">⚡ ${msg.responseMs}ms</span>` : ""}
+          ${msg.cached ? `<span class="meta-chip">Cache</span>` : ""}
+        </div>
+        ${sourcesHtml}
+      </div>`;
+    messages.appendChild(row);
+  }
+
+  function renderStoredError(errorText) {
+    const messages = document.getElementById("messages");
+    const row = document.createElement("div");
+    row.className = "message-row bot-row";
+    row.innerHTML = `
+      <div class="avatar bot"><img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT logo"/></div>
+      <div class="message-content">
+        <div class="message-author">LIGJBOT</div>
+        <div class="error-msg">⚠️ ${escapeHtml(errorText)}</div>
+      </div>`;
+    messages.appendChild(row);
+  }
+
+  function persistHistory() {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify({ activeChatId, chats }));
+    } catch (e) {}
+  }
+
+  function loadHistory() {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (!raw) {
+        createNewChat();
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      chats = Array.isArray(parsed.chats) ? parsed.chats : [];
+      activeChatId = parsed.activeChatId || null;
+      if (!chats.length) createNewChat();
+    } catch (e) {
+      chats = [];
+      createNewChat();
+    }
   }
 
   // ── Textarea auto-resize ──────────────────────────────────

@@ -1,7 +1,7 @@
 """
 ====================================================
 TEST RAG — Teston RAG pipeline automatikisht
-LigjetBot - Faza 2
+LIGJBOT - Faza 2
 
 Perdorim:
   python src/test_rag.py          # Te gjitha testet
@@ -86,20 +86,20 @@ def run_tests(quick: bool = False):
     """Ekzekuton te gjitha testet dhe raporton rezultatin."""
 
     print("\n" + "="*60)
-    print("  LigjetBot — Test Suite")
+    print("  LIGJBOT — Test Suite")
     print("  Faza 2: RAG Core me Gemini")
     print("="*60)
 
     # Import RAG
     try:
         sys.path.insert(0, str(Path(__file__).parent))
-        from rag_core import LigjetBotRAG
+        from rag_core import LIGJBOTRAG
     except ImportError as e:
         print(f"❌ Import error: {e}")
         sys.exit(1)
 
     # Inicializo
-    bot = LigjetBotRAG()
+    bot = LIGJBOTRAG()
     if not bot.initialize():
         sys.exit(1)
 
@@ -200,7 +200,7 @@ def run_tests(quick: bool = False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="LigjetBot Test Suite")
+    parser = argparse.ArgumentParser(description="LIGJBOT Test Suite")
     parser.add_argument("--quick", action="store_true", help="Ekzekuto 3 teste te shpejta")
     args = parser.parse_args()
     run_tests(quick=args.quick)

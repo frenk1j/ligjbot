@@ -41,7 +41,7 @@
     --sidebar-text:#e8ecf3;
     --btn-primary: #0f1d3d;
     --btn-primary-hover: #1a3058;
-    --grid-line:   rgba(15,29,61,.06);
+    --watermark-opacity: 0.22;
   }
 
   /* Dark mode */
@@ -65,7 +65,7 @@
     --sidebar-text:#e8edf5;
     --btn-primary: #c9a227;
     --btn-primary-hover: #e4c76b;
-    --grid-line:   rgba(201,162,39,.07);
+    --watermark-opacity: 0.34;
   }
 
   html {
@@ -283,10 +283,6 @@
     overflow: hidden; background: var(--bg);
     transition: background .2s;
     min-width: 0;
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 28px 28px;
   }
 
   /* ── Topbar ──────────────────────────────────────────────── */
@@ -365,6 +361,38 @@
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .chat-watermark {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .chat-watermark img {
+    width: min(560px, 82vw);
+    max-height: 82vh;
+    object-fit: contain;
+    filter: blur(14px) saturate(1.15);
+    opacity: var(--watermark-opacity);
+  }
+
+  .messages-inner {
+    position: relative;
+    z-index: 1;
+    min-height: 100%;
+  }
+
+  .message-row,
+  .empty-state {
+    position: relative;
   }
   .messages::-webkit-scrollbar { width: 5px; }
   .messages::-webkit-scrollbar-track { background: transparent; }
@@ -606,10 +634,15 @@
 
     <!-- Messages -->
     <div class="messages" id="messages">
-      <div class="empty-state" id="empty-state">
-        <h1>LIGJBOT</h1>
-        <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
-        <div class="starter-grid" id="starter-grid"></div>
+      <div class="chat-watermark" aria-hidden="true">
+        <img src="/static/ligjbot-logo.png" alt="">
+      </div>
+      <div class="messages-inner" id="messages-inner">
+        <div class="empty-state" id="empty-state">
+          <h1>LIGJBOT</h1>
+          <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
+          <div class="starter-grid" id="starter-grid"></div>
+        </div>
       </div>
     </div>
 
@@ -793,7 +826,7 @@
   // ── New chat ──────────────────────────────────────────────
   function newChat() {
     createNewChat();
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     messages.innerHTML = `
       <div class="empty-state" id="empty-state">
         <h1>LIGJBOT</h1>
@@ -869,7 +902,7 @@
 
   // ── DOM helpers ───────────────────────────────────────────
   function appendMessage(role, text) {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row      = document.createElement("div");
     const isUser   = role === "user";
     row.className  = "message-row" + (isUser ? "" : " bot-row");
@@ -888,7 +921,7 @@
   }
 
   async function appendBotMessage(answer, sources, responseMs, cached) {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row      = document.createElement("div");
     row.className  = "message-row bot-row";
 
@@ -934,7 +967,7 @@
   }
 
   function appendTyping() {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row      = document.createElement("div");
     row.className  = "message-row bot-row";
     const id       = "typing-" + Date.now();
@@ -956,7 +989,7 @@
   }
 
   function appendError(msg) {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row      = document.createElement("div");
     row.className  = "message-row bot-row";
     row.innerHTML  = `
@@ -1069,7 +1102,7 @@
     const chat = chats.find(c => c.id === chatId);
     if (!chat) return;
     activeChatId = chatId;
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     messages.innerHTML = "";
     if (!chat.messages.length) {
       messages.innerHTML = `
@@ -1105,7 +1138,7 @@
   }
 
   function renderStoredUser(text) {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row = document.createElement("div");
     row.className = "message-row";
     row.innerHTML = `
@@ -1118,7 +1151,7 @@
   }
 
   function renderStoredAssistant(msg) {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row = document.createElement("div");
     row.className = "message-row bot-row";
     let sourcesHtml = "";
@@ -1149,7 +1182,7 @@
   }
 
   function renderStoredError(errorText) {
-    const messages = document.getElementById("messages");
+    const messages = document.getElementById("messages-inner");
     const row = document.createElement("div");
     row.className = "message-row bot-row";
     row.innerHTML = `

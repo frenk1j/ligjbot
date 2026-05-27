@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from rag_core import LIGJBOTRAG
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 # Singleton RAG instance (loaded once at startup)
 bot = LIGJBOTRAG()

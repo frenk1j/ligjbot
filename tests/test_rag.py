@@ -92,7 +92,7 @@ def run_tests(quick: bool = False):
 
     # Import RAG
     try:
-        sys.path.insert(0, str(Path(__file__).parent))
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from rag_core import LIGJBOTRAG
     except ImportError as e:
         print(f"❌ Import error: {e}")

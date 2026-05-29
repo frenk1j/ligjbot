@@ -50,7 +50,8 @@ GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
 LLM_MODEL         = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
 EMBEDDING_MODEL   = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-large")
 VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH", "./vector_store/faiss_index")
-TOP_K_RESULTS     = int(os.getenv("TOP_K_RESULTS", 5))
+TOP_K_RESULTS     = int(os.getenv("TOP_K_RESULTS", 3))
+FAST_TOP_K        = int(os.getenv("FAST_TOP_K", 2))
 TEMPERATURE       = float(os.getenv("TEMPERATURE", 0.1))
 MAX_TOKENS        = int(os.getenv("MAX_TOKENS", 512))
 CONTEXT_CHARS_PER_CHUNK = int(os.getenv("CONTEXT_CHARS_PER_CHUNK", 800))
@@ -87,6 +88,17 @@ KUJDES:
 # RAG ENGINE
 # ══════════════════════════════════════════════════════════════════════════
 
+def _embedding_device() -> str:
+    """Përdor MPS në Mac (Apple Silicon) për kërkim më të shpejtë."""
+    try:
+        import torch
+        if torch.backends.mps.is_available():
+            return "mps"
+    except Exception:
+        pass
+    return "cpu"
+
+
 class LIGJBOTRAG:
     """
     RAG Engine kryesor i LIGJBOT.
@@ -99,16 +111,17 @@ class LIGJBOTRAG:
         self.embeddings: Optional[HuggingFaceEmbeddings] = None
         self._initialized = False
 
-    def initialize(self) -> bool:
-        """Ngarkon vector store dhe inicializon Gemini LLM."""
+    def initialize(self, skip_llm: bool = False) -> bool:
+        """Ngarkon vector store; opsionalisht inicializon Groq LLM."""
 
         print(f"\n{Fore.CYAN}{'='*55}")
         print(f"  LIGJBOT — Asistenti Juridik Shqiptar")
-        print(f"  Faza 2: RAG Core me Groq {LLM_MODEL}")
+        mode = "FAST (vetëm kërkim)" if skip_llm else f"RAG me Groq {LLM_MODEL}"
+        print(f"  {mode}")
         print(f"{'='*55}{Style.RESET_ALL}\n")
 
-        # ── Validim API Key ───────────────────────────────────────────────
-        if not GROQ_API_KEY or GROQ_API_KEY == "your-groq-api-key-here":
+        # ── Validim API Key (vetëm kur nevojitet LLM) ─────────────────────
+        if not skip_llm and (not GROQ_API_KEY or GROQ_API_KEY == "your-groq-api-key-here"):
             print(f"{Fore.RED}❌ GROQ_API_KEY nuk eshte konfiguruar!")
             print(f"   1. Shko: https://console.groq.com")
             print(f"   2. Klik 'API Keys' → 'Create API Key'")
@@ -122,13 +135,14 @@ class LIGJBOTRAG:
             return False
 
         # ── Ngarko Embeddings ─────────────────────────────────────────────
-        print(f"{Fore.YELLOW}⏳ Duke ngarkuar embedding model...{Style.RESET_ALL}")
+        device = _embedding_device()
+        print(f"{Fore.YELLOW}⏳ Duke ngarkuar embedding model ({device})...{Style.RESET_ALL}")
         self.embeddings = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
-            model_kwargs={"device": "cpu"},
+            model_kwargs={"device": device},
             encode_kwargs={"normalize_embeddings": True},
         )
-        print(f"{Fore.GREEN}✅ Embedding model i ngarkuar ({EMBEDDING_MODEL}){Style.RESET_ALL}")
+        print(f"{Fore.GREEN}✅ Embedding model i ngarkuar ({EMBEDDING_MODEL}, {device}){Style.RESET_ALL}")
 
         # ── Ngarko FAISS ──────────────────────────────────────────────────
         print(f"{Fore.YELLOW}⏳ Duke ngarkuar FAISS vector store...{Style.RESET_ALL}")
@@ -139,30 +153,33 @@ class LIGJBOTRAG:
         )
         print(f"{Fore.GREEN}✅ FAISS index i ngarkuar{Style.RESET_ALL}")
 
-        # ── Inicializo Groq ───────────────────────────────────────────────
-        print(f"{Fore.YELLOW}⏳ Duke u lidhur me Groq {LLM_MODEL}...{Style.RESET_ALL}")
-        self.llm = ChatGroq(
-            model=LLM_MODEL,
-            api_key=GROQ_API_KEY,
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
-        )
-        print(f"{Fore.GREEN}✅ Groq {LLM_MODEL} i lidhur{Style.RESET_ALL}")
+        # ── Inicializo Groq (anashkalohet në FAST_MODE) ────────────────────
+        if skip_llm:
+            print(f"{Fore.CYAN}⚡ FAST_MODE: Groq u anashkalua (vetëm kërkim FAISS){Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}⏳ Duke u lidhur me Groq {LLM_MODEL}...{Style.RESET_ALL}")
+            self.llm = ChatGroq(
+                model=LLM_MODEL,
+                api_key=GROQ_API_KEY,
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS,
+            )
+            print(f"{Fore.GREEN}✅ Groq {LLM_MODEL} i lidhur{Style.RESET_ALL}")
 
         self._initialized = True
         print(f"\n{Fore.GREEN}🎯 LIGJBOT eshte gati! Shkruaj pyetjen tend.{Style.RESET_ALL}")
         print(f"{Fore.CYAN}💡 Shkruaj 'exit' ose 'quit' per te dale.{Style.RESET_ALL}\n")
         return True
 
-    def search_relevant_chunks(self, query: str) -> List[Document]:
+    def search_relevant_chunks(self, query: str, k: Optional[int] = None) -> List[Document]:
         """
         Kerkon ne FAISS chunks me relevante per pyetjen.
         Perdor prefix 'query: ' per modelin e5-large.
         """
-        # Prefix i kerkuar nga multilingual-e5-large per queries
+        if k is None:
+            k = TOP_K_RESULTS
         search_query = f"query: {query}"
-        docs = self.vector_store.similarity_search(search_query, k=TOP_K_RESULTS)
-        return docs
+        return self.vector_store.similarity_search(search_query, k=k)
 
     def build_context(self, docs: List[Document]) -> str:
         """
@@ -260,7 +277,11 @@ PYETJA E QYTETARIT: {question}
 
 PERGJIGJA JOTE (ne shqip, e qarte dhe me citim neni):"""
 
-        # ── Step 4: Gemini Generation ─────────────────────────────────────
+        # ── Step 4: LLM Generation ────────────────────────────────────────
+        if not self.llm:
+            return {
+                "error": "LLM nuk eshte aktiv. Vendos FAST_MODE=0 ose rinis serverin pa skip_llm.",
+            }
 
         response = self.llm.invoke([HumanMessage(content=full_prompt)])
         answer = response.content.strip()

@@ -2,10 +2,16 @@
 <html lang="sq" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="LIGJBOT"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="format-detection" content="telephone=no"/>
 <meta name="theme-color" content="#060b16" id="theme-color-meta"/>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="/static/ligjbot-logo.png"/>
+<link rel="icon" type="image/png" href="/static/ligjbot-logo.png"/>
 <title>LIGJBOT — Asistenti Juridik</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -97,6 +103,8 @@
     padding-left:   env(safe-area-inset-left);
     padding-right:  env(safe-area-inset-right);
     transition: background .2s, color .2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   @media (min-width: 641px) {
@@ -252,7 +260,7 @@
   }
 
   .sidebar-close {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     color: rgba(255,255,255,.85);
@@ -440,9 +448,28 @@
     align-self: center;
   }
 
+  .telefon-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 12px;
+    min-height: 36px;
+    border-radius: 8px;
+    color: var(--heading);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    flex-shrink: 0;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .telefon-btn.glass-btn:hover { border-color: var(--gold); }
+
   /* Theme toggle button */
   .theme-btn {
-    margin-left: auto;
+    margin-left: 6px;
     color: var(--text-light);
     border-radius: 8px;
     width: 36px; height: 36px;
@@ -777,38 +804,137 @@
     transition: color .2s;
   }
 
-  /* ── Mobile ──────────────────────────────────────────────── */
+  /* ── Mobile (iOS & Android) ─────────────────────────────── */
   @media (max-width: 640px) {
+    .app {
+      height: 100dvh;
+      min-height: -webkit-fill-available;
+    }
+
+    .main {
+      min-height: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 12px;
+    }
+
+    .sidebar-toggle-btn,
+    .theme-btn,
+    .hamburger-btn {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .starter-card {
+      min-height: 48px;
+      padding: 14px 16px;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .topbar-label {
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .telefon-btn { display: none !important; }
+
+    .messages {
+      touch-action: pan-y;
+      padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    }
+
+    .input-area {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: var(--keyboard-offset, 0px);
+      z-index: 50;
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+    }
+
+    [data-theme="dark"] .input-area {
+      box-shadow: 0 -8px 32px rgba(0,0,0,.35);
+    }
+
     .sidebar {
       position: fixed;
       top: 0;
       bottom: 0;
       left: 0;
       right: auto;
-      width: min(var(--sidebar-w), 85vw);
-      min-width: min(var(--sidebar-w), 85vw);
+      width: min(var(--sidebar-w), 88vw);
+      min-width: min(var(--sidebar-w), 88vw);
       z-index: 100;
       transform: translateX(-100%);
       opacity: 1;
       pointer-events: auto;
       padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+      will-change: transform;
     }
+
+    .sidebar-close {
+      display: flex;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
     .app.sidebar-collapsed .sidebar {
-      width: min(var(--sidebar-w), 85vw);
-      min-width: min(var(--sidebar-w), 85vw);
+      width: min(var(--sidebar-w), 88vw);
+      min-width: min(var(--sidebar-w), 88vw);
       transform: translateX(-100%);
       opacity: 1;
     }
+
     .sidebar.open { transform: translateX(0); }
+
+    .sidebar-overlay.open {
+      display: block;
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+
     .sidebar-toggle-btn { display: none; }
     .hamburger-btn { display: flex; }
-    .starter-grid        { grid-template-columns: 1fr; }
-    .message-row         { padding: 12px 14px; }
-    .empty-state         { padding: 24px 16px; }
+    .starter-grid { grid-template-columns: 1fr; gap: 10px; }
+    .message-row { padding: 12px 14px; }
+    .empty-state { padding: 20px 16px 8px; }
+    .empty-state h1 { font-size: 1.75rem; }
+    .source-chip {
+      min-height: 40px;
+      padding: 8px 12px;
+    }
+  }
+
+  /* PWA / Add to Home Screen (iOS & Android) */
+  @media (display-mode: standalone) {
+    .topbar {
+      padding-top: max(env(safe-area-inset-top), 8px);
+    }
+  }
+
+  body.mobile-nav-open {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
   }
 </style>
+<script>window.LIGJBOT_SUGGESTIONS = {{ suggestions | tojson }};</script>
 </head>
 <body>
 <div class="app">
@@ -843,6 +969,9 @@
       <div class="topbar-divider"></div>
       <div class="status-dot loading" id="status-dot"></div>
       <span class="topbar-label" id="topbar-label">Duke u ngarkuar…</span>
+      {% if mobile_url %}
+      <a href="/telefon" class="telefon-btn glass-btn" title="Hap në iPhone/Android">📱 Telefon</a>
+      {% endif %}
       <button class="theme-btn glass-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Ndrysho temën" type="button"></button>
     </div>
 
@@ -870,6 +999,10 @@
           disabled
           spellcheck="false"
           autocomplete="off"
+          autocapitalize="sentences"
+          enterkeyhint="send"
+          inputmode="text"
+          aria-label="Pyetja ligjore"
         ></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled title="Dërgo" type="button" aria-label="Dërgo mesazhin">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
@@ -952,7 +1085,7 @@
   const SIDEBAR_KEY = "LIGJBOT-sidebar-collapsed";
 
   function isMobile() {
-    return window.innerWidth <= 640;
+    return window.matchMedia("(max-width: 640px)").matches;
   }
 
   function setSidebarCollapsed(collapsed) {
@@ -987,13 +1120,13 @@
     }
     document.getElementById("sidebar").classList.add("open");
     document.getElementById("sidebar-overlay").classList.add("open");
-    document.body.style.overflow = "hidden";
+    document.body.classList.add("mobile-nav-open");
   }
 
   function closeSidebarMobile() {
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebar-overlay").classList.remove("open");
-    document.body.style.overflow = "";
+    document.body.classList.remove("mobile-nav-open");
   }
 
   function closeSidebar() {
@@ -1009,6 +1142,47 @@
     });
   })();
 
+  /** Ngrej input-in mbi tastierën (iOS Safari / Android Chrome). */
+  function setupMobileKeyboard() {
+    if (!window.visualViewport) return;
+    const root = document.documentElement;
+    const update = () => {
+      if (!isMobile()) {
+        root.style.removeProperty("--keyboard-offset");
+        return;
+      }
+      const vv = window.visualViewport;
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      root.style.setProperty("--keyboard-offset", offset + "px");
+      if (document.activeElement === document.getElementById("user-input")) {
+        scrollBottom();
+      }
+    };
+    window.visualViewport.addEventListener("resize", update);
+    window.visualViewport.addEventListener("scroll", update);
+    update();
+  }
+
+  /** Rrëshqit sidebar-in majtas për ta mbyllur (touch). */
+  function setupSidebarSwipe() {
+    const sidebar = document.getElementById("sidebar");
+    let startX = 0;
+    let tracking = false;
+    sidebar.addEventListener("touchstart", (e) => {
+      if (!sidebar.classList.contains("open")) return;
+      startX = e.touches[0].clientX;
+      tracking = true;
+    }, { passive: true });
+    sidebar.addEventListener("touchmove", (e) => {
+      if (!tracking) return;
+      if (e.touches[0].clientX - startX < -72) {
+        tracking = false;
+        closeSidebarMobile();
+      }
+    }, { passive: true });
+    sidebar.addEventListener("touchend", () => { tracking = false; }, { passive: true });
+  }
+
   // ── Init ──────────────────────────────────────────────────
   async function init() {
     loadHistory();
@@ -1020,8 +1194,11 @@
 
   async function loadSuggestions() {
     try {
-      const res  = await fetch("/api/suggestions");
-      const list = await res.json();
+      let list = window.LIGJBOT_SUGGESTIONS;
+      if (!Array.isArray(list) || !list.length) {
+        const res = await fetch("/api/suggestions");
+        list = await res.json();
+      }
       suggestionQuestions = Array.isArray(list) ? list : [];
 
       const sidebar = document.getElementById("sidebar-suggestions");
@@ -1058,17 +1235,20 @@
 
       if (data.ready) {
         dot.className     = "status-dot ready";
-        label.textContent = "Gati";
+        label.textContent = data.fast_mode ? "Gati (i shpejtë)" : "Gati";
         input.disabled    = false;
         btn.disabled      = false;
       } else if (data.error) {
         dot.className     = "status-dot error";
         label.textContent = "Gabim: " + data.error;
+        input.disabled    = true;
+        btn.disabled      = true;
       } else {
-        setTimeout(pollStatus, 2000);
+        label.textContent = data.loading ? "Duke u ngarkuar…" : "Duke u ngarkuar…";
+        setTimeout(pollStatus, 600);
       }
     } catch (e) {
-      setTimeout(pollStatus, 3000);
+      setTimeout(pollStatus, 1200);
     }
   }
 
@@ -1119,7 +1299,7 @@
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1272,6 +1452,10 @@
     const safe = String(text || "");
     if (!safe.length) {
       el.textContent = "";
+      return;
+    }
+    if (isMobile()) {
+      el.textContent = safe;
       return;
     }
     let i = 0;
@@ -1483,11 +1667,12 @@
     }
   });
 
-  // iOS: scroll to bottom when keyboard appears so input stays visible
   textarea.addEventListener("focus", () => {
-    setTimeout(() => scrollBottom(), 300);
+    setTimeout(() => scrollBottom(), 280);
   });
 
+  setupMobileKeyboard();
+  setupSidebarSwipe();
   init();
 </script>
 </body>

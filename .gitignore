@@ -2,7 +2,7 @@
 # LIGJBOT — .gitignore
 # ============================================================
 
-# API Keys — KURRE mos commit!
+# Secrets — KURRE mos commit!
 .env
 
 # Virtual environment
@@ -10,7 +10,7 @@
 venv/
 env/
 
-# Vector store — shumë i madh, rigjenerohet nga Faza 1
+# Vector store — shumë i madh, rigjenerohet me: python scripts/ingestion.py
 vector_store/
 
 # Python cache
@@ -23,7 +23,7 @@ build/
 # PDF-të (opcional — shto nëse nuk do i commit)
 # data/pdfs/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 

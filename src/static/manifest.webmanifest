@@ -1,0 +1,26 @@
+{
+  "name": "LIGJBOT — Asistenti Juridik",
+  "short_name": "LIGJBOT",
+  "description": "Asistent juridik për qytetarët shqiptarë",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b1018",
+  "theme_color": "#0b1018",
+  "lang": "sq",
+  "icons": [
+    {
+      "src": "/static/ligjbot-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/ligjbot-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

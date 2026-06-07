@@ -88,7 +88,6 @@
 
   html {
     height: 100%;
-    /* prevent rubber-band scroll on iOS */
     overscroll-behavior: none;
   }
 
@@ -141,7 +140,6 @@
     overflow: hidden;
   }
 
-  /* ── Sidebar overlay (mobile) ───────────────────────────── */
   .sidebar-overlay {
     display: none;
     position: fixed;
@@ -151,7 +149,6 @@
   }
   .sidebar-overlay.open { display: block; }
 
-  /* ── Sidebar (liquid glass) ─────────────────────────────── */
   .sidebar {
     width: var(--sidebar-w);
     min-width: var(--sidebar-w);
@@ -172,9 +169,7 @@
   }
 
   @media (min-width: 641px) {
-    .sidebar {
-      border-radius: var(--radius-xl);
-    }
+    .sidebar { border-radius: var(--radius-xl); }
   }
 
   .glass-btn {
@@ -274,12 +269,15 @@
   .sidebar-close:hover { color: #fff; }
 
   .new-chat-btn {
-    display: flex; align-items: center; gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 12px 12px 10px;
     padding: 10px 14px;
     border-radius: var(--radius-lg);
     color: rgba(255,255,255,.92);
-    cursor: pointer; font-size: 13px;
+    cursor: pointer;
+    font-size: 13px;
     width: calc(100% - 24px);
     text-align: left;
     font-family: inherit;
@@ -303,36 +301,49 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .history-item {
-    width: 100%;
-    text-align: left;
-    color: rgba(255,255,255,.88);
-    border-radius: var(--radius-lg);
-    padding: 10px 10px;
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 1.35;
-    min-height: 48px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: column;
-    transition: background .15s, border-color .15s, color .15s;
-    font-family: inherit;
-  }
+.history-item {
+  width: 100%;
+  text-align: left;
+  color: rgba(255,255,255,.88);
+  border-radius: var(--radius-lg);
+  padding: 10px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.35;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background .15s, border-color .15s, color .15s;
+  font-family: inherit;
+  min-width: 0;
+  overflow: hidden;
+}
   .history-item.glass-btn:hover { color: #fff; }
   .history-item.active {
     background: var(--glass-btn-hover);
     border-color: rgba(255,255,255,.3);
     color: #fff;
   }
+
+.history-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
   .history-title {
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
+    text-align: left;
   }
+
   .history-sub {
     width: 100%;
     white-space: nowrap;
@@ -341,7 +352,21 @@
     font-size: 11px;
     opacity: .65;
     margin-top: 2px;
+    text-align: left;
   }
+
+  .history-delete {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    color: rgba(255,255,255,.65);
+    flex-shrink: 0;
+  }
+  .history-delete:hover { color: #fff; }
 
   .suggestion-btn {
     display: block; width: 100%;
@@ -360,7 +385,6 @@
     color: rgba(255,255,255,.9);
   }
 
-  /* ── Main ────────────────────────────────────────────────── */
   .main {
     flex: 1; display: flex; flex-direction: column;
     overflow: hidden;
@@ -369,7 +393,6 @@
     min-width: 0;
   }
 
-  /* ── Topbar ──────────────────────────────────────────────── */
   .topbar {
     --topbar-h: 52px;
     padding: 0 16px;
@@ -467,7 +490,6 @@
   }
   .telefon-btn.glass-btn:hover { border-color: var(--gold); }
 
-  /* Theme toggle button */
   .theme-btn {
     margin-left: 6px;
     color: var(--text-light);
@@ -487,7 +509,6 @@
 
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  /* ── Messages ────────────────────────────────────────────── */
   .messages {
     flex: 1; overflow-y: auto; padding: 0 0 24px;
     scroll-behavior: smooth;
@@ -535,7 +556,6 @@
   .messages::-webkit-scrollbar-track { background: transparent; }
   .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  /* Empty state */
   .empty-state {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -568,7 +588,6 @@
     box-shadow: 0 4px 16px rgba(0,0,0,.1);
   }
 
-  /* Message row */
   .message-row {
     display: flex; padding: 16px 20px; gap: 12px;
     max-width: calc(var(--max-w) + 80px);
@@ -646,7 +665,6 @@
     border-top-color: rgba(15,29,61,.06);
   }
 
-  /* Sources */
   .sources-block {
     margin-top: 12px; display: flex; flex-wrap: wrap;
     gap: 6px; align-items: center;
@@ -665,14 +683,12 @@
     font-size: 12px; color: var(--heading); text-decoration: none;
     transition: background .15s, border-color .15s, color .15s;
     cursor: pointer; white-space: nowrap;
-    /* touch-friendly */
     min-height: 32px;
   }
   .source-chip:hover, .source-chip:active {
     background: var(--btn-primary); color: #fff; border-color: var(--btn-primary);
   }
 
-  /* Typing */
   .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
   .typing-dots span {
     width: 6px; height: 6px; background: var(--text-muted);
@@ -682,7 +698,6 @@
   .typing-dots span:nth-child(3) { animation-delay: .4s; }
   @keyframes dot-bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
 
-  /* Error */
   .error-msg {
     color: var(--red); background: var(--error-bg);
     border: 1px solid var(--error-border);
@@ -690,7 +705,6 @@
     transition: background .2s, border-color .2s;
   }
 
-  /* ── Input area (chat) ───────────────────────────────────── */
   .input-area {
     padding: 14px 16px;
     padding-bottom: calc(14px + env(safe-area-inset-bottom));
@@ -698,6 +712,62 @@
     background: var(--bg);
     border-top: 1px solid var(--border);
     transition: background .2s, border-color .2s;
+  }
+
+  #attachment-bar {
+    max-width: var(--max-w);
+    margin: 0 auto 4px;
+    padding: 0;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  }
+
+  .attachment-chip-label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .attachment-chip-name {
+    font-weight: 500;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .attachment-chip-size {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .attachment-chip-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+  }
+
+  .attachment-chip-close {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
   }
 
   .input-wrapper {
@@ -736,6 +806,30 @@
     border-color: rgba(15,29,61,.22);
     box-shadow: 0 0 0 2px rgba(15,29,61,.08), 0 2px 14px rgba(15,29,61,.08);
   }
+
+  .upload-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--glass-btn-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s, border-color .15s, transform .12s, opacity .15s;
+    min-width: 38px;
+    font-size: 18px;
+  }
+  .upload-btn:hover {
+    background: var(--glass-btn-hover);
+    border-color: var(--glass-btn-border);
+    transform: translateY(-1px);
+  }
+  .upload-btn:active { transform: translateY(0); }
+  .upload-btn:disabled { opacity: .4; cursor: not-allowed; }
 
   #user-input {
     flex: 1;
@@ -804,7 +898,6 @@
     transition: color .2s;
   }
 
-  /* ── Mobile (iOS & Android) ─────────────────────────────── */
   @media (max-width: 640px) {
     .app {
       height: 100dvh;
@@ -921,11 +1014,8 @@
     }
   }
 
-  /* PWA / Add to Home Screen (iOS & Android) */
   @media (display-mode: standalone) {
-    .topbar {
-      padding-top: max(env(safe-area-inset-top), 8px);
-    }
+    .topbar { padding-top: max(env(safe-area-inset-top), 8px); }
   }
 
   body.mobile-nav-open {
@@ -934,15 +1024,14 @@
     overflow: hidden;
   }
 </style>
-<script>window.LIGJBOT_SUGGESTIONS = {{ suggestions | tojson }};</script>
+<script>
+  window.LIGJBOT_SUGGESTIONS = {{ suggestions | tojson }};
+</script>
 </head>
 <body>
 <div class="app">
-
-  <!-- Mobile sidebar overlay -->
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
 
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
@@ -951,15 +1040,17 @@
       </div>
       <button class="sidebar-close glass-btn" onclick="onSidebarCloseClick()" aria-label="Mbyll sidebar">✕</button>
     </div>
-    <button class="new-chat-btn glass-btn" onclick="newChat(); if(isMobile()) collapseSidebar();">✏️ &nbsp;Bisedë e re</button>
-    <div class="sidebar-section">Chats</div>
+<button class="new-chat-btn glass-btn" onclick="newChat(); if(isMobile()) collapseSidebar();">✏️ &nbsp;Bisedë e re</button>
+
+<a href="/news" class="new-chat-btn glass-btn" style="text-decoration:none; margin-top:0;">
+  📰 &nbsp;Lajme Rrugore
+</a>
+
+<div class="sidebar-section">Chats</div>
     <div class="history-list" id="history-list"></div>
   </aside>
 
-  <!-- Main panel -->
   <div class="main">
-
-    <!-- Topbar -->
     <div class="topbar">
       <button type="button" class="sidebar-toggle-btn glass-btn" id="sidebar-toggle" onclick="toggleSidebarDesktop()" aria-label="Hap/mbyll sidebar">☰</button>
       <button type="button" class="hamburger-btn sidebar-toggle-btn glass-btn" onclick="openSidebarMobile()" aria-label="Menu">☰</button>
@@ -975,7 +1066,6 @@
       <button class="theme-btn glass-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Ndrysho temën" type="button"></button>
     </div>
 
-    <!-- Messages -->
     <div class="messages" id="messages">
       <div class="chat-watermark" aria-hidden="true">
         <img id="chat-watermark-img" src="/static/ligjbot-logo.png" alt="">
@@ -989,21 +1079,28 @@
       </div>
     </div>
 
-    <!-- Input -->
     <div class="input-area">
+      <!-- chip bar above input -->
+      <div id="attachment-bar"></div>
+
       <div class="input-wrapper">
+        <button class="upload-btn" id="upload-pdf-btn" type="button"
+                onclick="document.getElementById('pdf-input').click()"
+                title="Ngarko PDF">+</button>
+        <input type="file" id="pdf-input" accept="application/pdf" style="display:none"/>
+
         <textarea
           id="user-input"
           rows="1"
-          placeholder="Shkruaj pyetjen tënde ligjore…"
+          placeholder="Shkruaj pyetjen tënde ligjore..."
           disabled
           spellcheck="false"
           autocomplete="off"
           autocapitalize="sentences"
           enterkeyhint="send"
           inputmode="text"
-          aria-label="Pyetja ligjore"
-        ></textarea>
+          aria-label="Pyetja ligjore"></textarea>
+
         <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled title="Dërgo" type="button" aria-label="Dërgo mesazhin">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
         </button>
@@ -1012,7 +1109,6 @@
         LIGJBOT mund të bëjë gabime. Për situata serioze konsultohuni me avokat.
       </div>
     </div>
-
   </div>
 </div>
 
@@ -1023,7 +1119,16 @@
   let suggestionQuestions = [];
   const HISTORY_KEY = "LIGJBOT-history";
 
-  // ── Theme ─────────────────────────────────────────────────
+  function getOrCreateUserId() {
+    let id = localStorage.getItem("ligjbot_user_id");
+    if (!id) {
+      id = "user-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("ligjbot_user_id", id);
+    }
+    return id;
+  }
+  const userId = getOrCreateUserId();
+
   const THEME_KEY = "LIGJBOT-theme";
 
   const ICON_SUN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
@@ -1031,23 +1136,13 @@
   const LOGO_DARK  = "/static/ligjbot-logo.png";
   const LOGO_LIGHT = "/static/ligjbot-logo-light.png";
 
-  function themeLogoSrc(theme) {
-    return theme === "light" ? LOGO_LIGHT : LOGO_DARK;
-  }
-
-  function currentTheme() {
-    return document.documentElement.getAttribute("data-theme") || "dark";
-  }
-
-  function botLogoImg() {
-    return `<img class="logo-img" src="${themeLogoSrc(currentTheme())}" alt="LIGJBOT logo"/>`;
-  }
+  function themeLogoSrc(theme) { return theme === "light" ? LOGO_LIGHT : LOGO_DARK; }
+  function currentTheme() { return document.documentElement.getAttribute("data-theme") || "dark"; }
+  function botLogoImg() { return `<img class="logo-img" src="${themeLogoSrc(currentTheme())}" alt="LIGJBOT logo"/>`; }
 
   function updateThemeLogos(theme) {
     const src = themeLogoSrc(theme);
-    document.querySelectorAll(".logo-img, #chat-watermark-img").forEach((el) => {
-      el.src = src;
-    });
+    document.querySelectorAll(".logo-img, #chat-watermark-img").forEach((el) => { el.src = src; });
   }
 
   function applyTheme(theme) {
@@ -1075,7 +1170,6 @@
     localStorage.setItem(THEME_KEY, next);
   }
 
-  // Apply saved theme immediately (prevents flash)
   (function () {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved) applyTheme(saved);
@@ -1083,16 +1177,11 @@
   })();
 
   const SIDEBAR_KEY = "LIGJBOT-sidebar-collapsed";
-
-  function isMobile() {
-    return window.matchMedia("(max-width: 640px)").matches;
-  }
+  function isMobile() { return window.matchMedia("(max-width: 640px)").matches; }
 
   function setSidebarCollapsed(collapsed) {
     document.querySelector(".app").classList.toggle("sidebar-collapsed", collapsed);
-    if (!isMobile()) {
-      localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
-    }
+    if (!isMobile()) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
   }
 
   function toggleSidebarDesktop() {
@@ -1102,16 +1191,11 @@
   }
 
   function collapseSidebar() {
-    if (isMobile()) {
-      closeSidebarMobile();
-    } else {
-      setSidebarCollapsed(true);
-    }
+    if (isMobile()) closeSidebarMobile();
+    else setSidebarCollapsed(true);
   }
 
-  function onSidebarCloseClick() {
-    collapseSidebar();
-  }
+  function onSidebarCloseClick() { collapseSidebar(); }
 
   function openSidebarMobile() {
     if (!isMobile()) {
@@ -1129,20 +1213,13 @@
     document.body.classList.remove("mobile-nav-open");
   }
 
-  function closeSidebar() {
-    collapseSidebar();
-  }
+  function closeSidebar() { collapseSidebar(); }
 
   (function initSidebarState() {
-    if (!isMobile() && localStorage.getItem(SIDEBAR_KEY) === "1") {
-      setSidebarCollapsed(true);
-    }
-    window.addEventListener("resize", () => {
-      if (!isMobile()) closeSidebarMobile();
-    });
+    if (!isMobile() && localStorage.getItem(SIDEBAR_KEY) === "1") setSidebarCollapsed(true);
+    window.addEventListener("resize", () => { if (!isMobile()) closeSidebarMobile(); });
   })();
 
-  /** Ngrej input-in mbi tastierën (iOS Safari / Android Chrome). */
   function setupMobileKeyboard() {
     if (!window.visualViewport) return;
     const root = document.documentElement;
@@ -1154,16 +1231,13 @@
       const vv = window.visualViewport;
       const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       root.style.setProperty("--keyboard-offset", offset + "px");
-      if (document.activeElement === document.getElementById("user-input")) {
-        scrollBottom();
-      }
+      if (document.activeElement === document.getElementById("user-input")) scrollBottom();
     };
     window.visualViewport.addEventListener("resize", update);
     window.visualViewport.addEventListener("scroll", update);
     update();
   }
 
-  /** Rrëshqit sidebar-in majtas për ta mbyllur (touch). */
   function setupSidebarSwipe() {
     const sidebar = document.getElementById("sidebar");
     let startX = 0;
@@ -1183,7 +1257,6 @@
     sidebar.addEventListener("touchend", () => { tracking = false; }, { passive: true });
   }
 
-  // ── Init ──────────────────────────────────────────────────
   async function init() {
     loadHistory();
     await loadSuggestions();
@@ -1200,18 +1273,6 @@
         list = await res.json();
       }
       suggestionQuestions = Array.isArray(list) ? list : [];
-
-      const sidebar = document.getElementById("sidebar-suggestions");
-      if (sidebar) {
-        list.forEach(q => {
-          const btn = document.createElement("button");
-          btn.className   = "suggestion-btn";
-          btn.textContent = q;
-          btn.title       = q;
-          btn.onclick     = () => { submitQuestion(q); closeSidebar(); };
-          sidebar.appendChild(btn);
-        });
-      }
 
       const grid = document.getElementById("starter-grid");
       suggestionQuestions.slice(0, 4).forEach(q => {
@@ -1235,7 +1296,7 @@
 
       if (data.ready) {
         dot.className     = "status-dot ready";
-        label.textContent = data.fast_mode ? "Gati (i shpejtë)" : "Gati";
+        label.textContent = "Online";
         input.disabled    = false;
         btn.disabled      = false;
       } else if (data.error) {
@@ -1244,7 +1305,8 @@
         input.disabled    = true;
         btn.disabled      = true;
       } else {
-        label.textContent = data.loading ? "Duke u ngarkuar…" : "Duke u ngarkuar…";
+        dot.className     = "status-dot loading";
+        label.textContent = "Duke u ngarkuar…";
         setTimeout(pollStatus, 600);
       }
     } catch (e) {
@@ -1252,7 +1314,6 @@
     }
   }
 
-  // ── New chat ──────────────────────────────────────────────
   function newChat() {
     createNewChat();
     const messages = document.getElementById("messages-inner");
@@ -1262,7 +1323,6 @@
         <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
         <div class="starter-grid" id="starter-grid"></div>
       </div>`;
-
     const grid = document.getElementById("starter-grid");
     suggestionQuestions.slice(0, 4).forEach((q) => {
       const card = document.createElement("button");
@@ -1275,7 +1335,17 @@
     renderHistory();
   }
 
-  // ── Send ──────────────────────────────────────────────────
+  function deleteChat(chatId) {
+    chats = chats.filter(c => c.id !== chatId);
+    if (activeChatId === chatId) {
+      if (!chats.length) createNewChat();
+      activeChatId = chats[0].id;
+      loadChat(activeChatId);
+    }
+    persistHistory();
+    renderHistory();
+  }
+
   function sendMessage() {
     const input = document.getElementById("user-input");
     const text  = input.value.trim();
@@ -1303,7 +1373,7 @@
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: question }),
+        body: JSON.stringify({ message: question, user_id: userId }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -1314,12 +1384,17 @@
       if (!res.ok || data.error) {
         appendError(data.error || "Gabim i panjohur.");
       } else {
-        await appendBotMessage(data.answer, data.sources, data.response_ms, data.cached);
+        await appendBotMessage(
+          data.answer,
+          data.sources,
+          data.response_s,
+          data.cached
+        );
       }
     } catch (err) {
       removeTyping(typingId);
       if (err.name === "AbortError") {
-        appendError("Pergjigjja po vonon. Provo nje pyetje me te shkurter ose dergo perseri.");
+        appendError("Përgjigjja po vonon. Provo një pyetje më të shkurtër ose dërgo përsëri.");
       } else {
         appendError("Gabim rrjeti: " + err.message);
       }
@@ -1329,7 +1404,6 @@
     }
   }
 
-  // ── DOM helpers ───────────────────────────────────────────
   function appendMessage(role, text) {
     const messages = document.getElementById("messages-inner");
     const row      = document.createElement("div");
@@ -1343,13 +1417,10 @@
       </div>`;
     messages.appendChild(row);
     scrollBottom();
-    upsertChatMessage({
-      role,
-      text,
-    });
+    upsertChatMessage({ role, text });
   }
 
-  async function appendBotMessage(answer, sources, responseMs, cached) {
+  async function appendBotMessage(answer, sources, responseSeconds, cached) {
     const messages = document.getElementById("messages-inner");
     const row      = document.createElement("div");
     row.className  = "message-row bot-row";
@@ -1370,7 +1441,7 @@
 
     const metaChips = `
       <div class="meta-row">
-        ${responseMs ? `<span class="meta-chip">⚡ ${responseMs}ms</span>` : ""}
+        ${responseSeconds ? `<span class="meta-chip">⚡ ${responseSeconds}s</span>` : ""}
         ${cached ? `<span class="meta-chip">Cache</span>` : ""}
       </div>`;
 
@@ -1390,7 +1461,7 @@
       role: "assistant",
       text: answer,
       sources: sources || [],
-      responseMs: responseMs || null,
+      responseSeconds: responseSeconds || null,
       cached: !!cached,
     });
   }
@@ -1429,10 +1500,7 @@
       </div>`;
     messages.appendChild(row);
     scrollBottom();
-    upsertChatMessage({
-      role: "assistant",
-      error: msg,
-    });
+    upsertChatMessage({ role: "assistant", error: msg });
   }
 
   function scrollBottom() {
@@ -1450,21 +1518,13 @@
 
   async function typeText(el, text, delayMs = 8) {
     const safe = String(text || "");
-    if (!safe.length) {
-      el.textContent = "";
-      return;
-    }
-    if (isMobile()) {
-      el.textContent = safe;
-      return;
-    }
+    if (!safe.length) { el.textContent = ""; return; }
+    if (isMobile()) { el.textContent = safe; return; }
     let i = 0;
     while (i < safe.length) {
-      // Render in small chunks to keep it smooth and fast
       const step = i < 120 ? 1 : i < 400 ? 2 : 3;
       el.textContent = safe.slice(0, i + step);
       i += step;
-      // Keep scroll pinned while typing
       scrollBottom();
       await new Promise(r => setTimeout(r, delayMs));
     }
@@ -1506,30 +1566,40 @@
     if (chat.title === "Bisedë e re" && message.role === "user" && message.text) {
       chat.title = message.text.slice(0, 48);
     }
-    // keep latest active chat on top
     chats.sort((a, b) => b.updatedAt - a.updatedAt);
     persistHistory();
     renderHistory();
   }
 
-  function renderHistory() {
-    const list = document.getElementById("history-list");
-    if (!list) return;
-    list.innerHTML = "";
-    chats.slice(0, 25).forEach(chat => {
-      const btn = document.createElement("button");
-      btn.className = "history-item glass-btn" + (chat.id === activeChatId ? " active" : "");
-      btn.title = chat.title;
-      const preview = chat.messages.find(m => m.role === "assistant" && m.text)?.text
-        || chat.messages.find(m => m.role === "user" && m.text)?.text
-        || "Bisedë e re";
-      btn.innerHTML = `
-        <span class="history-title">${escapeHtml(chat.title)}</span>
-        <span class="history-sub">${escapeHtml(preview.slice(0, 52))}</span>`;
-      btn.onclick = () => loadChat(chat.id);
-      list.appendChild(btn);
-    });
-  }
+function renderHistory() {
+  const list = document.getElementById("history-list");
+  if (!list) return;
+  list.innerHTML = "";
+  chats.slice(0, 25).forEach(chat => {
+    const btn = document.createElement("div");
+    btn.className = "history-item glass-btn" + (chat.id === activeChatId ? " active" : "");
+    btn.title = chat.title;
+
+    const firstAssistant = chat.messages.find(m => m.role === "assistant" && m.text);
+    const preview = firstAssistant ? firstAssistant.text : "";
+
+btn.innerHTML = `
+  <div class="history-text">
+    <span class="history-title">${escapeHtml(chat.title)}</span>
+    <span class="history-sub">${escapeHtml(preview.slice(0, 52))}</span>
+  </div>
+  <button class="history-delete" title="Fshi këtë bisedë" aria-label="Fshi këtë bisedë">🗑️</button>
+`;
+
+    btn.querySelector(".history-text").onclick = () => loadChat(chat.id);
+    btn.querySelector(".history-delete").onclick = (e) => {
+      e.stopPropagation();
+      deleteChat(chat.id);
+    };
+
+    list.appendChild(btn);
+  });
+}
 
   function loadChat(chatId) {
     const chat = chats.find(c => c.id === chatId);
@@ -1606,7 +1676,7 @@
         <div class="message-author">LIGJBOT</div>
         <div class="message-text">${escapeHtml(msg.text || "")}</div>
         <div class="meta-row">
-          ${msg.responseMs ? `<span class="meta-chip">⚡ ${msg.responseMs}ms</span>` : ""}
+          ${msg.responseSeconds ? `<span class="meta-chip">⚡ ${msg.responseSeconds}s</span>` : ""}
           ${msg.cached ? `<span class="meta-chip">Cache</span>` : ""}
         </div>
         ${sourcesHtml}
@@ -1636,10 +1706,7 @@
   function loadHistory() {
     try {
       const raw = localStorage.getItem(HISTORY_KEY);
-      if (!raw) {
-        createNewChat();
-        return;
-      }
+      if (!raw) { createNewChat(); return; }
       const parsed = JSON.parse(raw);
       chats = Array.isArray(parsed.chats) ? parsed.chats : [];
       activeChatId = parsed.activeChatId || null;
@@ -1650,30 +1717,92 @@
     }
   }
 
-  // ── Textarea auto-resize ──────────────────────────────────
   function autoResize(el) {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   }
 
   const textarea = document.getElementById("user-input");
-
   textarea.addEventListener("input", function () { autoResize(this); });
-
   textarea.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
-
-  textarea.addEventListener("focus", () => {
-    setTimeout(() => scrollBottom(), 280);
-  });
+  textarea.addEventListener("focus", () => { setTimeout(() => scrollBottom(), 280); });
 
   setupMobileKeyboard();
   setupSidebarSwipe();
   init();
+
+  function formatBytes(bytes) {
+    if (!bytes || isNaN(bytes)) return "";
+    const units = ["B", "KB", "MB", "GB"];
+    let i = 0;
+    let n = bytes;
+    while (n >= 1024 && i < units.length - 1) {
+      n /= 1024;
+      i++;
+    }
+    return n.toFixed(1) + " " + units[i];
+  }
+
+  function showAttachmentChip(file) {
+    const bar = document.getElementById("attachment-bar");
+    if (!bar) return;
+    bar.innerHTML = "";
+    const chip = document.createElement("div");
+    chip.className = "attachment-chip";
+    chip.innerHTML = `
+      <div class="attachment-chip-badge">PDF</div>
+      <div class="attachment-chip-label">
+        <div class="attachment-chip-name" title="${file.name}">${file.name}</div>
+        <div class="attachment-chip-size">${formatBytes(file.size)}</div>
+      </div>
+      <button class="attachment-chip-close" type="button" aria-label="Hiq dokumentin">✕</button>`;
+    chip.querySelector(".attachment-chip-close").onclick = () => { bar.innerHTML = ""; };
+    bar.appendChild(chip);
+  }
+
+async function uploadPdfFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/upload_pdf", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("Ngarkimi dështoi:", data.error);
+      return;
+    }
+    console.log("PDF u ngarkua:", data.filename, data.chunks_added);
+  } catch (e) {
+    console.error("Gabim gjatë ngarkimit të PDF:", e);
+  }
+}
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const pdfInput = document.getElementById("pdf-input");
+    if (pdfInput) {
+      pdfInput.addEventListener("change", () => {
+        const file = pdfInput.files[0];
+        if (!file) return;
+        if (file.type !== "application/pdf") {
+          alert("Lejohen vetëm skedarë PDF.");
+          pdfInput.value = "";
+          return;
+        }
+        showAttachmentChip(file);
+        uploadPdfFile(file);
+        pdfInput.value = "";
+      });
+    }
+  });
 </script>
 </body>
 </html>

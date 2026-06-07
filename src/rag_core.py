@@ -1,24 +1,25 @@
 """
 ====================================================
-FAZA 2: RAG CORE — Python Q&A via Gemini
+FAZA 2: RAG CORE — Python Q&A via Groq
 LIGJBOT - Albanian Legal RAG System
 ====================================================
 
 Stack:
   - Vector Search : FAISS + HuggingFace multilingual-e5-large
-  - LLM           : Google Gemini 2.0 Flash (1500 req/day FREE)
-  - Framework     : LangChain
+  - LLM          : Groq llama-3.1-8b-instant
+  - Framework    : LangChain
 
 Si funksionon:
   1. Qytetari shkruan pyetjen
   2. FAISS kerkon chunks me te ngjashme (semantic search)
-  3. Chunks i dergohen Gemini si kontekst
-  4. Gemini gjeneron pergjigje te qarte me citim neni
+  3. (Tani) BM25 ben kërkim me fjalë kyçe
+  4. Rezultatet kombinohen (hybrid) dhe i dërgohen LLM si kontekst
+  5. LLM gjeneron pergjigje të qartë me citim neni
 
 Perdorim:
-  python src/rag_core.py              # Chat interaktiv
-  python src/rag_core.py --query "pyetja"  # Pyetje direkte
-  python src/rag_core.py --demo       # Demo me pyetje te paracaktuara
+  python src/rag_core.py                    # Chat interaktiv
+  python src/rag_core.py --query "pyetja"   # Pyetje direkte
+  python src/rag_core.py --demo             # Demo me pyetje te paracaktuara
 ====================================================
 """
 
@@ -36,6 +37,7 @@ try:
     from langchain_community.vectorstores import FAISS
     from langchain_huggingface import HuggingFaceEmbeddings
     from langchain_groq import ChatGroq
+    from langchain_community.retrievers import BM25Retriever  # NEW
     from langchain_core.documents import Document
     from langchain_core.messages import HumanMessage
     from colorama import Fore, Style, init
@@ -55,34 +57,43 @@ FAST_TOP_K        = int(os.getenv("FAST_TOP_K", 2))
 TEMPERATURE       = float(os.getenv("TEMPERATURE", 0.1))
 MAX_TOKENS        = int(os.getenv("MAX_TOKENS", 512))
 CONTEXT_CHARS_PER_CHUNK = int(os.getenv("CONTEXT_CHARS_PER_CHUNK", 800))
+USE_HYBRID        = os.getenv("USE_HYBRID", "1") == "1"
 
 # ── System Prompt ──────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """Ti je LIGJBOT — asistenti juridik i qytetareve shqiptare.
+SYSTEM_PROMPT = """Ti je LIGJBOT — asistenti juridik i qytetarëve shqiptarë.
 
 MISIONI YT:
-Ndihmon qytetaret shqiptare te kuptojne te drejtat dhe detyrimet e tyre ligjore,
-vecanerisht ne situata me policine, gjobat rrugore, dhe kontrollat kufitare.
+Ndihmon qytetarët shqiptarë të kuptojnë të drejtat dhe detyrimet e tyre ligjore,
+veçanërisht në situata me policinë, gjobat rrugore dhe kontrollat kufitare.
 
-RREGULLAT E PERGJIGJES:
-1. Pergjigju VETEM bazuar ne dokumentet ligjore te dhena si kontekst
-2. Citohu GJITHMONE nenin dhe ligjin specifik (p.sh. "Neni 19, Ligji Nr. 82/2024")
-3. Shpjego ne gjuhe te thjeshte, pa zhargon juridik
-4. Nese pyetja nuk ka pergjigje ne kontekst, thuaj qarte: "Nuk gjeta informacion per kete ne ligjet e indexuara"
-5. Per situata serioze (arrest, akuza penale), rekomandon konsultim me avokat
-6. Pergjigjet te jene te shkurtra dhe te qarta — max 200 fjale
-7. Pergjigju ne gjuhen qe te drejtohet perdoruesi (shqip ose anglisht)
+RREGULLAT E PËRGJIGJES:
+1. Përgjigju vetëm bazuar në dokumentet ligjore të dhëna si kontekst.
+2. Mos e kopjo tekstin e ligjit fjalë për fjalë; shpjegoje me gjuhë të thjeshtë dhe natyrale.
+3. Mos u bëj robotik: shkruaj sikur po i shpjegon një qytetari, me fjali të rrjedhshme.
+4. Cito gjithmonë nenin dhe ligjin specifik kur ka bazë të qartë në kontekst.
+5. Për situata serioze si arrest, procedura penale ose akuza të rënda, rekomando konsultim me avokat.
+6. Përgjigjet duhet të jenë të shkurtra, por pak më të plota: zakonisht 3–5 fjali gjithsej.
+7. Përgjigju në gjuhën që të drejtohet përdoruesi (shqip ose anglisht).
 
-FORMATI I PERGJIGJES:
-- Filloje me pergjigjen direkte
-- Pastaj citimet ligjore
-- Mbylloje me keshille praktike nese eshte e nevojshme
+STILI I PËRGJIGJES:
+- Jep fillimisht përgjigjen kryesore në mënyrë të qartë dhe natyrale.
+- Pastaj shto një fjali me bazën ligjore.
+- Nëse duhet, shto edhe një fjali kujdesi ose sqarimi.
+- Mos përdor etiketa të thata si "Seksioni 1", "Seksioni 2", "Seksioni 3".
+- Mos e përsërit të njëjtin informacion në formë të ngurtë.
+- Kur është e mundur, përmbylle me një shpjegim të shkurtër që e bën më të kuptueshme për përdoruesin.
+
+FORMATI I DËSHIRUAR:
+- 1 fjali përgjigje e natyrshme.
+- 1 fjali bazë ligjore me nenin dhe ligjin.
+- 1 fjali shtesë vetëm nëse e ndihmon kuptimin ose nevojitet kujdes.
 
 KUJDES:
-- Mos shpik informacion qe nuk eshte ne kontekst
-- Mos jep keshilla per vepra penale
-- Gjithmone kujtoje perdoruesin se LIGJBOT eshte informues, jo zevendesues i avokatit
+- Nëse pyetja nuk ka përgjigje të qartë në kontekst, thuaj: "Nuk gjeta informacion të qartë për këtë në ligjet e indeksuara" dhe mos supozo nen apo ligj.
+- Mos shpik numra nenesh ose ligjesh; cito vetëm ato që shfaqen në tekstin e dhënë.
+- Mos jep këshilla për vepra penale.
+- Mos supozo fakte që nuk dalin nga ligjet e dhëna.
 """
-
 
 # ══════════════════════════════════════════════════════════════════════════
 # RAG ENGINE
@@ -98,11 +109,23 @@ def _embedding_device() -> str:
         pass
     return "cpu"
 
+def _dedupe_paragraphs(text: str) -> str:
+    """Heq paragrafe të përsëritura thuajse identike."""
+    parts = [p.strip() for p in text.split("\n\n") if p.strip()]
+    seen = set()
+    clean_parts = []
+    for p in parts:
+        key = p.replace(" ", "").lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        clean_parts.append(p)
+    return "\n\n".join(clean_parts)
 
 class LIGJBOTRAG:
     """
     RAG Engine kryesor i LIGJBOT.
-    Menaxhon FAISS search + Gemini generation.
+    Menaxhon FAISS search + Groq generation.
     """
 
     def __init__(self):
@@ -110,6 +133,12 @@ class LIGJBOTRAG:
         self.llm: Optional[ChatGroq] = None
         self.embeddings: Optional[HuggingFaceEmbeddings] = None
         self._initialized = False
+
+        # Semantic retriever (FAISS-based)
+        self.retriever = None
+
+        # NEW: BM25 lexical retriever
+        self.bm25_retriever: Optional[BM25Retriever] = None
 
     def initialize(self, skip_llm: bool = False) -> bool:
         """Ngarkon vector store; opsionalisht inicializon Groq LLM."""
@@ -153,7 +182,27 @@ class LIGJBOTRAG:
         )
         print(f"{Fore.GREEN}✅ FAISS index i ngarkuar{Style.RESET_ALL}")
 
-        # ── Inicializo Groq (anashkalohet në FAST_MODE) ────────────────────
+        # Krijo semantic retriever standard nga FAISS
+        self.retriever = self.vector_store.as_retriever(search_kwargs={"k": FAST_TOP_K})
+
+        # ── NEW: Nderto BM25 retriever nga të njëjtat dokumente ────────────
+        try:
+            all_docs = list(self.vector_store.docstore._dict.values())
+            if all_docs:
+                print(f"{Fore.YELLOW}⏳ Duke ndertuar BM25 lexical index ({len(all_docs)} chunks)...{Style.RESET_ALL}")
+                self.bm25_retriever = BM25Retriever.from_documents(
+                    all_docs,
+                    k=FAST_TOP_K,
+                )
+                print(f"{Fore.GREEN}✅ BM25 retriever i gatshem{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}⚠️ Nuk u gjetën dokumente në docstore për BM25{Style.RESET_ALL}")
+                self.bm25_retriever = None
+        except Exception as e:
+            print(f"{Fore.RED}⚠️ Nuk u ndertua BM25 retriever: {e}{Style.RESET_ALL}")
+            self.bm25_retriever = None
+
+        # ── Inicializo Groq (anashkalohet në FAST_MODE) ───────────────────
         if skip_llm:
             print(f"{Fore.CYAN}⚡ FAST_MODE: Groq u anashkalua (vetëm kërkim FAISS){Style.RESET_ALL}")
         else:
@@ -173,18 +222,94 @@ class LIGJBOTRAG:
 
     def search_relevant_chunks(self, query: str, k: Optional[int] = None) -> List[Document]:
         """
-        Kerkon ne FAISS chunks me relevante per pyetjen.
-        Perdor prefix 'query: ' per modelin e5-large.
+        Kërkon në FAISS chunks më relevante për pyetjen (vetëm semantik).
+        Përdor prefix 'query: ' për modelin e5-large.
         """
         if k is None:
             k = TOP_K_RESULTS
         search_query = f"query: {query}"
         return self.vector_store.similarity_search(search_query, k=k)
 
+    def hybrid_search_relevant_chunks(self, query: str, k: Optional[int] = None) -> List[Document]:
+        """
+        Hybrid search: kombinon FAISS (semantik) + BM25 (fjalë kyçe),
+        pastaj bën një re-rankim të thjeshtë duke përdorur renditjen si score.
+        """
+        if not self.vector_store:
+            return []
+
+        top_k = k or TOP_K_RESULTS
+
+        # 1) Semantic search via FAISS (përdor funksionin ekzistues që punon)
+        semantic_docs: List[Document] = []
+        try:
+            semantic_docs = self.search_relevant_chunks(query, k=top_k)
+        except Exception as e:
+            print(f"[WARN] Semantic search deshtoi: {e}")
+
+        bm25_docs: List[Document] = []
+        if self.bm25_retriever is not None:
+            try:
+                # LangChain retrievers use .invoke(query) in newer versions
+                bm25_docs = self.bm25_retriever.invoke(query)[:top_k]
+            except Exception as e:
+                print(f"[WARN] BM25 search deshtoi: {e}")
+
+        # 3) Fuzionim i thjeshtë i rezultateve
+        combined: dict[str, dict] = {}
+
+        def add_docs(docs: List[Document], weight: float, source: str):
+            for rank, d in enumerate(docs):
+                meta = d.metadata or {}
+                doc_id = (
+                    meta.get("id")
+                    or meta.get("source")
+                    or f"{id(d)}"
+                )
+                score = (top_k - rank) / top_k  # 1.0 për vendin e parë, pastaj më pak
+                if doc_id not in combined:
+                    combined[doc_id] = {"doc": d, "score": 0.0, "sources": set()}
+                combined[doc_id]["score"] += weight * score
+                combined[doc_id]["sources"].add(source)
+
+        # Pesha: semantik 0.6, BM25 0.4 (mund t'i ndryshosh me vone)
+        add_docs(semantic_docs, weight=0.6, source="semantic")
+        add_docs(bm25_docs,    weight=0.4, source="bm25")
+
+        if not combined:
+            return []
+
+        ranked = sorted(combined.values(), key=lambda x: x["score"], reverse=True)
+        return [item["doc"] for item in ranked[:top_k]]
+
+    def add_documents(self, docs: List[Document]):
+        """
+        Shton dokumente të reja në FAISS dhe rifreskon BM25 retrieverin.
+        Përdoret kur ngarkohen ligje të reja (p.sh. PDF e Kodi Rrugor).
+        """
+        if not self.vector_store or not docs:
+            return
+
+        # 1) shto në FAISS
+        self.vector_store.add_documents(docs)
+
+        # 2) rifresko docstore list
+        all_docs = list(self.vector_store.docstore._dict.values())
+
+        # 3) rifresko BM25
+        try:
+            self.bm25_retriever = BM25Retriever.from_documents(
+                all_docs,
+                k=FAST_TOP_K,
+            )
+            print("✅ BM25 retriever u rifreskua pas ngarkimit të PDF.")
+        except Exception as e:
+            print(f"[WARN] Rifreskimi i BM25 deshtoi: {e}")
+
     def build_context(self, docs: List[Document]) -> str:
         """
-        Nderton kontekstin nga chunks e gjetur.
-        Formaon cdo chunk me metadata te qarte per Gemini.
+        Ndërton kontekstin nga chunks e gjetur.
+        Format çdo chunk me metadata të qartë për LLM.
         """
         context_parts = []
 
@@ -201,10 +326,10 @@ class LIGJBOTRAG:
             content = doc.page_content
             if content.startswith("passage: "):
                 content = content[9:]
-            # Hiq header metadata nga content per te evituar duplikime
+            # Hiq header metadata nga content për të shmangur duplikime
             if "---" in content:
                 content = content.split("---", 1)[-1].strip()
-            # Limit context size per chunk for faster responses
+            # Limit context size per chunk
             if len(content) > CONTEXT_CHARS_PER_CHUNK:
                 content = content[:CONTEXT_CHARS_PER_CHUNK].rstrip() + "..."
 
@@ -220,7 +345,7 @@ class LIGJBOTRAG:
         return "\n\n" + ("─" * 50) + "\n\n".join(context_parts)
 
     def build_sources_summary(self, docs: List[Document]) -> str:
-        """Nderton nje liste te shkurter te burimeve per display."""
+        """Ndërton një listë të shkurtër të burimeve për display."""
         sources = []
         seen = set()
 
@@ -240,12 +365,13 @@ class LIGJBOTRAG:
 
         return "\n".join(sources)
 
-    def ask(self, question: str) -> Dict:
+    def ask(self, question: str, history: Optional[list[dict]] = None) -> Dict:
         """
         Pyetja kryesore RAG.
 
         Args:
             question: Pyetja e qytetarit
+            history:  Lista me turns te meparshme (role, content)
 
         Returns:
             Dict me: answer, sources, chunks_used
@@ -253,23 +379,48 @@ class LIGJBOTRAG:
         if not self._initialized:
             return {"error": "LIGJBOT nuk eshte inicializuar. Thirr initialize() me pare."}
 
-        # ── Step 1: Semantic Search ───────────────────────────────────────
-        relevant_docs = self.search_relevant_chunks(question)
+        # ── Step 1: Retrieval (FAISS vs Hybrid) ─────────────────────────
+        if USE_HYBRID:
+            relevant_docs = self.hybrid_search_relevant_chunks(question)
+        else:
+            relevant_docs = self.search_relevant_chunks(question)
 
         if not relevant_docs:
             return {
                 "answer": "Nuk gjeta informacion relevant ne ligjet e indexuara per kete pyetje.",
                 "sources": [],
-                "chunks_used": 0
+                "chunks_used": 0,
             }
 
-        # ── Step 2: Nderto Kontekstin ─────────────────────────────────────
+        # ── Step 2: Ndërto Kontekstin ───────────────────────────────────
         context = self.build_context(relevant_docs)
 
-        # ── Step 3: Nderto Promtin ────────────────────────────────────────
+        # ── Optional: Histori bisede ────────────────────────────────────
+        history_text = ""
+        if history:
+            turns: list[str] = []
+            recent = history[-10:]  # max 5 Q/A pairs
+            for turn in recent:
+                role = turn.get("role")
+                content = (turn.get("content") or "").strip()
+                if not content:
+                    continue
+                if role == "user":
+                    prefix = "Qytetari:"
+                else:
+                    prefix = "LIGJBOT:"
+                turns.append(f"{prefix} {content}")
+            if turns:
+                history_text = (
+                    "HISTORIKU I BISEDËS (pyetje të mëparshme):\n"
+                    + "\n".join(turns)
+                    + "\n\n"
+                )
+
+        # ── Step 3: Ndërto Promptin ─────────────────────────────────────
         full_prompt = f"""{SYSTEM_PROMPT}
 
-===== DOKUMENTET LIGJORE (KONTEKSTI) =====
+{history_text}===== DOKUMENTET LIGJORE (KONTEKSTI) =====
 {context}
 ==========================================
 
@@ -277,27 +428,27 @@ PYETJA E QYTETARIT: {question}
 
 PERGJIGJA JOTE (ne shqip, e qarte dhe me citim neni):"""
 
-        # ── Step 4: LLM Generation ────────────────────────────────────────
+        # ── Step 4: LLM Generation ──────────────────────────────────────
         if not self.llm:
             return {
                 "error": "LLM nuk eshte aktiv. Vendos FAST_MODE=0 ose rinis serverin pa skip_llm.",
             }
 
         response = self.llm.invoke([HumanMessage(content=full_prompt)])
-        answer = response.content.strip()
+        answer = _dedupe_paragraphs(response.content.strip())
 
-        # ── Step 5: Sources ───────────────────────────────────────────────
+        # ── Step 5: Sources ─────────────────────────────────────────────
         sources_text = self.build_sources_summary(relevant_docs)
 
         return {
             "answer": answer,
             "sources": sources_text,
             "chunks_used": len(relevant_docs),
-            "docs": relevant_docs
+            "docs": relevant_docs,
         }
 
     def format_response(self, result: Dict, question: str) -> str:
-        """Formon pergjigjen per display ne terminal."""
+        """Formon përgjigjen për display në terminal."""
 
         if "error" in result:
             return f"{Fore.RED}❌ {result['error']}{Style.RESET_ALL}"
@@ -314,7 +465,6 @@ PERGJIGJA JOTE (ne shqip, e qarte dhe me citim neni):"""
 
         return "\n".join(output)
 
-
 # ══════════════════════════════════════════════════════════════════════════
 # DEMO QUERIES
 # ══════════════════════════════════════════════════════════════════════════
@@ -330,7 +480,6 @@ DEMO_QUERIES = [
     "Cilat jane te drejtat e mia kur kryqezohem ne kufi?",
 ]
 
-
 # ══════════════════════════════════════════════════════════════════════════
 # INTERACTIVE CHAT
 # ══════════════════════════════════════════════════════════════════════════
@@ -339,8 +488,8 @@ def run_interactive_chat(bot: LIGJBOTRAG):
     """Chat interaktiv me LIGJBOT."""
 
     print(f"{Fore.CYAN}╔══════════════════════════════════════════════════════╗")
-    print(f"║           LIGJETBOT — Chat Interaktiv                ║")
-    print(f"║     Asistenti Juridik i Qytetarit Shqiptar           ║")
+    print(f"║           LIGJETBOT — Chat Interaktiv               ║")
+    print(f"║     Asistenti Juridik i Qytetarit Shqiptar          ║")
     print(f"╚══════════════════════════════════════════════════════╝{Style.RESET_ALL}")
     print(f"\n{Fore.WHITE}Pyetje shembull:")
     for q in DEMO_QUERIES[:4]:
@@ -349,7 +498,6 @@ def run_interactive_chat(bot: LIGJBOTRAG):
 
     while True:
         try:
-            # Input prompt
             user_input = input(
                 f"{Fore.GREEN}Ju: {Style.RESET_ALL}"
             ).strip()
@@ -361,7 +509,6 @@ def run_interactive_chat(bot: LIGJBOTRAG):
                 print(f"\n{Fore.CYAN}👋 Mirupafshim! Shpresoj te kem ndihmuar.{Style.RESET_ALL}\n")
                 break
 
-            # Help command
             if user_input.lower() in ["help", "ndihme", "?"]:
                 print(f"\n{Fore.CYAN}Pyetje shembull:{Style.RESET_ALL}")
                 for q in DEMO_QUERIES:
@@ -369,7 +516,6 @@ def run_interactive_chat(bot: LIGJBOTRAG):
                 print()
                 continue
 
-            # Pyetja
             print(f"\n{Fore.YELLOW}⏳ Duke kerkuar ne ligje...{Style.RESET_ALL}", end="\r")
             result = bot.ask(user_input)
             formatted = bot.format_response(result, user_input)
@@ -380,7 +526,6 @@ def run_interactive_chat(bot: LIGJBOTRAG):
             break
         except Exception as e:
             print(f"\n{Fore.RED}❌ Error: {e}{Style.RESET_ALL}\n")
-
 
 def run_demo(bot: LIGJBOTRAG):
     """Demo me pyetje te paracaktuara."""
@@ -400,7 +545,6 @@ def run_demo(bot: LIGJBOTRAG):
             if cont.lower() == 'q':
                 break
 
-
 # ══════════════════════════════════════════════════════════════════════════
 # ENTRY POINT
 # ══════════════════════════════════════════════════════════════════════════
@@ -412,9 +556,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Shembuj perdorimi:
-  python src/rag_core.py                          # Chat interaktiv
-  python src/rag_core.py --demo                   # Demo me pyetje
-  python src/rag_core.py --query "pyetja ime"     # Pyetje direkte
+  python src/rag_core.py                             # Chat interaktiv
+  python src/rag_core.py --demo                      # Demo me pyetje
+  python src/rag_core.py --query "pyetja ime"        # Pyetje direkte
         """
     )
     parser.add_argument(
@@ -431,32 +575,25 @@ Shembuj perdorimi:
         "--topk", "-k",
         type=int,
         default=TOP_K_RESULTS,
-        help=f"Sa chunks te ktheje FAISS (default: {TOP_K_RESULTS})"
+        help=f"Sa chunks te ktheje (default: {TOP_K_RESULTS})"
     )
 
     args = parser.parse_args()
 
-    # Override top_k nese specifikohet
     if args.topk != TOP_K_RESULTS:
         TOP_K_RESULTS = args.topk
 
-    # Inicializo bot
     bot = LIGJBOTRAG()
     if not bot.initialize():
         sys.exit(1)
 
-    # Zgjedh modalitetin
     if args.query:
-        # Pyetje direkte
         result = bot.ask(args.query)
         print(bot.format_response(result, args.query))
     elif args.demo:
-        # Demo mode
         run_demo(bot)
     else:
-        # Chat interaktiv (default)
         run_interactive_chat(bot)
-
 
 if __name__ == "__main__":
     main()

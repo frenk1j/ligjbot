@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="sq" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#060b16" id="theme-color-meta"/>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="/static/ligjbot-logo.png"/>
+<link rel="icon" type="image/png" href="/static/ligjbot-logo.png"/>
+<title>Lajme Rrugore — LIGJBOT</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #c9a227; --gold-soft: #e4c76b;
+    --radius: 8px; --radius-lg: 12px; --radius-xl: 20px;
+    --glass-blur: blur(24px) saturate(1.4);
+    --glass-border: rgba(255,255,255,.22);
+    --glass-shadow: 0 8px 32px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.15);
+    --glass-btn-bg: rgba(255,255,255,.1);
+    --glass-btn-hover: rgba(255,255,255,.18);
+    --glass-btn-border: rgba(255,255,255,.25);
+  }
+
+  [data-theme="dark"] {
+    --bg: #0b1018; --bg-sub: #121a28;
+    --border: #2a3548; --border-soft: #1a2436;
+    --text: #e8edf5; --text-muted: #94a3b8;
+    --heading: #f0d78c;
+    --btn-primary: #c9a227; --btn-primary-hover: #e4c76b;
+    --sidebar-glass: rgba(7,13,22,.7);
+  }
+  [data-theme="light"] {
+    --bg: #f3f4f6; --bg-sub: #ffffff;
+    --border: #d8dde8; --border-soft: #e8ecf3;
+    --text: #1a2332; --text-muted: #5f6b7c;
+    --heading: #0f1d3d;
+    --btn-primary: #0f1d3d; --btn-primary-hover: #1a3058;
+    --sidebar-glass: rgba(15,29,61,.92);
+  }
+
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    font-size: 15px; line-height: 1.6;
+    transition: background .2s, color .2s;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    height: 52px; padding: 0 20px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 10;
+    transition: background .2s, border-color .2s;
+  }
+  .topbar-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 600;
+    color: var(--heading); text-decoration: none;
+  }
+  .topbar-logo img { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--gold); }
+  .topbar-divider { width: 1px; height: 18px; background: var(--border); }
+  .topbar-title { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+  .glass-btn {
+    background: var(--glass-btn-bg);
+    border: 1px solid var(--glass-btn-border);
+    backdrop-filter: blur(12px);
+    transition: background .15s, border-color .15s;
+  }
+  .glass-btn:hover { background: var(--glass-btn-hover); border-color: rgba(255,255,255,.35); }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius);
+    color: var(--text); font-size: 13px; font-weight: 500;
+    text-decoration: none; cursor: pointer;
+    min-height: 36px;
+  }
+  .theme-btn {
+    width: 36px; height: 36px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-muted);
+  }
+  .theme-btn svg { width: 18px; height: 18px; }
+
+  /* PAGE */
+  .page { max-width: 860px; margin: 0 auto; padding: 28px 20px 48px; }
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: var(--heading); }
+  .page-header p  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  /* GRID */
+  #news-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .news-card {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 16px; border-radius: var(--radius-lg);
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
+    text-decoration: none; color: var(--text);
+    transition: border-color .15s, transform .15s, box-shadow .15s;
+  }
+  .news-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0,0,0,.12);
+  }
+  .news-source {
+    font-size: 10px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--gold);
+  }
+  .news-title  { font-size: 14px; font-weight: 600; line-height: 1.4; }
+  .news-summary{ font-size: 12px; color: var(--text-muted); line-height: 1.45; flex: 1; }
+  .news-date   { font-size: 11px; color: var(--text-muted); opacity: .65; margin-top: auto; padding-top: 6px; }
+
+  .news-loading, .no-news {
+    grid-column: 1 / -1; text-align: center;
+    padding: 60px 0; color: var(--text-muted); font-size: 14px;
+  }
+  .spinner {
+    width: 28px; height: 28px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 640px) {
+    .page { padding: 20px 14px 40px; }
+    #news-container { grid-template-columns: 1fr; }
+    .topbar { padding: 0 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="topbar-logo">
+    <img src="/static/ligjbot-logo.png" alt="LIGJBOT" id="nav-logo"/>
+    LIGJBOT
+  </a>
+  <div class="topbar-divider"></div>
+  <span class="topbar-title">📰 Lajme Rrugore</span>
+  <div class="topbar-right">
+    <a href="/" class="back-btn glass-btn">← Kthehu</a>
+    <button class="theme-btn glass-btn" id="theme-btn" onclick="toggleTheme()" type="button" aria-label="Tema">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Lajme & Ndryshime Ligjore</h1>
+    <p>Informacione të fundit nga DPSHTRR, BalkanWeb dhe burime të tjera mbi kodin rrugor shqiptar.</p>
+  </div>
+  <div id="news-container">
+    <div class="news-loading"><div class="spinner"></div>Duke ngarkuar lajmet…</div>
+  </div>
+</div>
+
+<script>
+  const THEME_KEY = "LIGJBOT-theme";
+  const ICON_SUN  = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
+  const ICON_MOON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const btn = document.getElementById("theme-btn");
+    const meta = document.getElementById("theme-color-meta");
+    const logo = document.getElementById("nav-logo");
+    btn.innerHTML = theme === "dark" ? ICON_SUN : ICON_MOON;
+    if (meta) meta.content = theme === "dark" ? "#0b1018" : "#f3f4f6";
+    if (logo) logo.src = theme === "dark" ? "/static/ligjbot-logo.png" : "/static/ligjbot-logo-light.png";
+  }
+  function toggleTheme() {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  }
+  (function() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) applyTheme(saved);
+    else if (window.matchMedia("(prefers-color-scheme: dark)").matches) applyTheme("dark");
+    else applyTheme("light");
+  })();
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function formatDate(str) {
+    if (!str) return "";
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return d.toLocaleDateString("sq-AL", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  async function loadNews() {
+    const container = document.getElementById("news-container");
+    try {
+      const res  = await fetch("/api/news");
+      const data = await res.json();
+      if (!data.articles || !data.articles.length) {
+        container.innerHTML = `<div class="no-news">📭 Nuk u gjetën lajme të reja për kodin rrugor.</div>`;
+        return;
+      }
+      container.innerHTML = data.articles.map(a => `
+        <a class="news-card" href="${escapeHtml(a.link)}" target="_blank" rel="noopener noreferrer">
+          <span class="news-source">${escapeHtml(a.source)}</span>
+          <h3 class="news-title">${escapeHtml(a.title)}</h3>
+          <p class="news-summary">${escapeHtml(a.summary)}…</p>
+          <span class="news-date">${escapeHtml(formatDate(a.published))}</span>
+        </a>
+      `).join("");
+    } catch (e) {
+      console.error("Gabim lajmet:", e);
+      container.innerHTML = `<div class="no-news">⚠️ Gabim gjatë ngarkimit të lajmeve.</div>`;
+    }
+  }
+
+  loadNews();
+</script>
+</body>
+</html>

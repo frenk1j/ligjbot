@@ -11,6 +11,16 @@ import threading
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
+from online_ingest import load_pdf_as_documents
+
+UPLOAD_FOLDER = "./uploaded_pdfs"
+ALLOWED_EXTENSIONS = {"pdf"}
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 load_dotenv()
 
@@ -26,9 +36,15 @@ bot = LIGJBOTRAG()
 bot_ready = False
 bot_error = None
 bot_loading = False
-answer_cache = {}
+
+answer_cache: dict[str, dict] = {}
 FAST_MODE = os.getenv("FAST_MODE", "1") == "1"
 CACHE_MAX = int(os.getenv("ANSWER_CACHE_MAX", "128"))
+
+# -------- NEW: per-user server-side memory --------
+user_histories: dict[str, list[dict]] = {}
+MAX_TURNS = int(os.getenv("MAX_TURNS_HISTORY", "5"))  # Q/A pairs per user
+# --------------------------------------------------
 
 SUGGESTIONS = [
     "Sa mund të më mbajë policia pa vendim gjykate?",
@@ -119,6 +135,36 @@ def init_bot() -> None:
 def start_bot_background() -> None:
     threading.Thread(target=init_bot, daemon=True).start()
 
+# -------- Upload PDF route --------
+@app.route("/api/upload_pdf", methods=["POST"])
+def upload_pdf():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Only PDF files are allowed"}), 400
+
+    filename = secure_filename(file.filename)
+    save_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(save_path)
+
+    try:
+        docs = load_pdf_as_documents(save_path)
+        bot.add_documents(docs)
+    except Exception as e:
+        print(f"[WARN] Ingestion e PDF deshtoi: {e}")
+        return jsonify({"error": "PDF u ruajt, por nuk u indeksua."}), 500
+
+    return jsonify({
+        "status": "ok",
+        "filename": filename,
+        "chunks_added": len(docs),
+    })
+# ----------------------------------
 
 @app.route("/")
 def index():
@@ -198,11 +244,27 @@ def chat():
             "error": bot_error or "LIGJBOT nuk është gati akoma."
         }), 503
 
-    data = request.get_json()
-    question = (data or {}).get("message", "").strip()
+    data = request.get_json() or {}
+    question = (data.get("message") or "").strip()
+    user_id = data.get("user_id") or "anonymous"
+        # Heuristic: if question is clearly not legal / about rights / police / laws, skip
+    lower_q = question.lower()
+    legal_keywords = ["ligj", "nen", "polici", "gjob", "kod", "rrugor", "procedur", "drejtat", "arrest"]
+    if not any(k in lower_q for k in legal_keywords):
+        return jsonify({
+            "answer": "Nuk gjeta informacion për këtë pyetje në ligjet e indeksuara. LIGJBOT është menduar vetëm për pyetje ligjore (të drejta, detyrime, polici, gjoba, ligje).",
+            "sources": [],
+            "chunks_used": 0,
+            "cached": False,
+            "response_s": 0.0,
+            "mode": "guardrail",
+        })
 
     if not question:
         return jsonify({"error": "Mesazhi është bosh."}), 400
+
+    # get server-side history for this user
+    history = user_histories.get(user_id, [])
 
     try:
         start = time.perf_counter()
@@ -214,13 +276,14 @@ def chat():
 
         if FAST_MODE:
             docs = bot.search_relevant_chunks(question, k=FAST_TOP_K)
+            elapsed = time.perf_counter() - start
             if not docs:
                 return jsonify({
                     "answer": "Nuk gjeta informacion relevant ne ligjet e indexuara per kete pyetje.",
                     "sources": [],
                     "chunks_used": 0,
                     "cached": False,
-                    "response_ms": int((time.perf_counter() - start) * 1000),
+                    "response_s": round(elapsed, 2),
                     "mode": "fast",
                 })
             snippets = []
@@ -238,7 +301,8 @@ def chat():
                 "chunks_used": len(docs),
             }
         else:
-            result = bot.ask(question)
+            # pass history into RAG
+            result = bot.ask(question, history=history)
             if "error" in result:
                 return jsonify({"error": result["error"]}), 500
 
@@ -263,14 +327,24 @@ def chat():
                     "url": f"/pdfs/{src_file}#page={page}" if src_file else None,
                 })
 
+        elapsed = time.perf_counter() - start
         payload = {
             "answer": result["answer"],
             "sources": structured_sources,
             "chunks_used": result["chunks_used"],
             "cached": False,
-            "response_ms": int((time.perf_counter() - start) * 1000),
+            "response_s": round(elapsed, 2),
             "mode": "fast" if FAST_MODE else "llm",
         }
+
+        # update per-user history (only when LLM mode is used)
+        if not FAST_MODE:
+            history.append({"role": "user", "content": question})
+            history.append({"role": "assistant", "content": payload["answer"]})
+            if len(history) > 2 * MAX_TURNS:
+                history = history[-2 * MAX_TURNS:]
+            user_histories[user_id] = history
+
         if len(answer_cache) >= CACHE_MAX:
             answer_cache.pop(next(iter(answer_cache)))
         answer_cache[cache_key] = payload
@@ -282,6 +356,64 @@ def chat():
 @app.route("/api/suggestions")
 def suggestions():
     return jsonify(SUGGESTIONS)
+
+# -------- News route --------
+import feedparser
+from functools import lru_cache
+import time as _time
+
+NEWS_FEEDS = [
+    {"source": "BalkanWeb",          "url": "https://www.balkanweb.com/feed/"},
+    {"source": "Albaniandailynews",  "url": "https://albaniandailynews.com/feed/"},
+    {"source": "Shqiptarja",         "url": "https://shqiptarja.com/rss"},
+]
+
+NEWS_KEYWORDS = [
+    "kodi rrugor", "road code", "dpshtrr", "patentë", "patent",
+    "gjobë", "gjoba", "kontroll teknik", "sigurim", "transport",
+    "ligj rrugor", "shofer", "aksident", "polici rrugore",
+    "targa", "automjet", "drejtues mjeti",
+]
+
+_news_cache: dict = {"data": [], "ts": 0}
+NEWS_TTL = 900  # 15 minuta
+
+def _fetch_news() -> list:
+    now = _time.time()
+    if _news_cache["data"] and (now - _news_cache["ts"]) < NEWS_TTL:
+        return _news_cache["data"]
+
+    articles = []
+    for feed_info in NEWS_FEEDS:
+        try:
+            feed = feedparser.parse(feed_info["url"])
+            for entry in feed.entries[:30]:
+                text = (entry.get("title", "") + " " + entry.get("summary", "")).lower()
+                if any(kw in text for kw in NEWS_KEYWORDS):
+                    articles.append({
+                        "title":     entry.get("title", ""),
+                        "summary":   entry.get("summary", "")[:220],
+                        "link":      entry.get("link", ""),
+                        "published": entry.get("published", ""),
+                        "source":    feed_info["source"],
+                    })
+        except Exception as e:
+            print(f"[WARN] Feed {feed_info['source']} deshtoi: {e}")
+
+    articles.sort(key=lambda x: x.get("published", ""), reverse=True)
+    _news_cache["data"] = articles
+    _news_cache["ts"]   = now
+    return articles
+
+@app.route("/news")
+def news_page():
+    return render_template("news.html")
+
+@app.route("/api/news")
+def api_news():
+    articles = _fetch_news()
+    return jsonify({"articles": articles, "count": len(articles)})
+# ----------------------------
 
 
 if __name__ == "__main__":

@@ -30,6 +30,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from rag_core import LIGJBOTRAG, FAST_TOP_K
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 # Singleton RAG instance (loaded once at startup)
 bot = LIGJBOTRAG()
@@ -89,7 +91,14 @@ def _lan_ip() -> str | None:
 
 
 def access_urls(port: int) -> dict[str, str | None]:
+    public = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
     local = f"http://127.0.0.1:{port}"
+    if public:
+        return {
+            "local_url": public,
+            "mobile_url": public,
+            "telefon_page": f"{public}/telefon",
+        }
     lan = _lan_ip()
     mobile = f"http://{lan}:{port}" if lan else None
     return {
@@ -166,6 +175,18 @@ def upload_pdf():
     })
 # ----------------------------------
 
+def firebase_config():
+    cfg = {
+        "apiKey":            os.getenv("FIREBASE_API_KEY", ""),
+        "authDomain":        os.getenv("FIREBASE_AUTH_DOMAIN", ""),
+        "projectId":         os.getenv("FIREBASE_PROJECT_ID", ""),
+        "storageBucket":     os.getenv("FIREBASE_STORAGE_BUCKET", ""),
+        "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
+        "appId":             os.getenv("FIREBASE_APP_ID", ""),
+    }
+    return cfg if cfg["apiKey"] else None
+
+
 @app.route("/")
 def index():
     port = int(os.getenv("PORT", "5001"))
@@ -175,6 +196,7 @@ def index():
         suggestions=SUGGESTIONS,
         mobile_url=urls["mobile_url"],
         telefon_page=urls["telefon_page"],
+        firebase=firebase_config(),
     )
 
 
@@ -279,24 +301,32 @@ def chat():
             elapsed = time.perf_counter() - start
             if not docs:
                 return jsonify({
-                    "answer": "Nuk gjeta informacion relevant ne ligjet e indexuara per kete pyetje.",
+                    "answer": "Nuk gjeta informacion relevant në ligjet e indeksuara për këtë pyetje.",
                     "sources": [],
                     "chunks_used": 0,
                     "cached": False,
                     "response_s": round(elapsed, 2),
                     "mode": "fast",
                 })
-            snippets = []
-            for i, d in enumerate(docs, 1):
+            parts = []
+            for d in docs:
                 content = d.page_content
                 if content.startswith("passage: "):
                     content = content[9:]
                 if "---" in content:
                     content = content.split("---", 1)[-1].strip()
-                clean = " ".join(content.split())
-                snippets.append(f"{i}. {clean[:220]}...")
+                clean = " ".join(content.split())[:300]
+                meta = d.metadata
+                article  = meta.get("article_number", "")
+                law_num  = meta.get("law_number", "")
+                src_file = meta.get("source_file", "")
+                page     = meta.get("page_number", 1)
+                url = f"/pdfs/{src_file}#page={page}" if src_file else None
+                label = f"{article}, {law_num}" if article else law_num
+                link  = f"[{label}]({url})" if url else label
+                parts.append(f"{clean}...\n\n→ {link}")
             result = {
-                "answer": "Nga ligjet e indexuara:\n\n" + "\n".join(snippets),
+                "answer": "\n\n---\n\n".join(parts),
                 "docs": docs,
                 "chunks_used": len(docs),
             }
@@ -424,3 +454,7 @@ if __name__ == "__main__":
     start_bot_background()
 
     app.run(debug=False, host="0.0.0.0", port=PORT, threaded=True)
+else:
+    # gunicorn / production (Render, Docker, etj.)
+    if os.getenv("LIGJBOT_BOOTSTRAP", "0") == "1":
+        start_bot_background()

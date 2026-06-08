@@ -470,42 +470,65 @@
     min-width: 0;
     align-self: center;
   }
+  .topbar-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .topbar-status.hidden { display: none; }
+
+  .sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 14px;
+    margin-top: auto;
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
 
   .telefon-btn {
-    margin-left: auto;
+    flex: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     padding: 0 12px;
-    min-height: 36px;
-    border-radius: 8px;
-    color: var(--heading);
+    min-height: 40px;
+    border-radius: var(--radius-lg);
+    color: rgba(255,255,255,.92);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     text-decoration: none;
-    flex-shrink: 0;
     font-family: inherit;
     white-space: nowrap;
   }
-  .telefon-btn.glass-btn:hover { border-color: var(--gold); }
+  .telefon-btn.glass-btn:hover { border-color: var(--gold); color: #fff; }
 
   .theme-btn {
-    margin-left: 6px;
-    color: var(--text-light);
-    border-radius: 8px;
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.88);
+    border-radius: var(--radius-lg);
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: background .15s, border-color .15s, color .15s;
     flex-shrink: 0;
+    font-family: inherit;
   }
   .theme-btn svg {
     width: 18px;
     height: 18px;
     display: block;
   }
-  .theme-btn.glass-btn:hover { border-color: var(--gold); color: var(--heading); }
+  .theme-btn.glass-btn:hover { border-color: var(--gold); color: #fff; }
+
+  .sidebar-section.hidden { display: none; }
 
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
@@ -891,6 +914,260 @@
     color: #fff;
   }
 
+  /* ── Auth Screen ──────────────────────────────────────── */
+  .auth-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    padding: 20px;
+  }
+  [data-theme="dark"] .auth-screen {
+    background: radial-gradient(ellipse 60% 70% at 50% 30%, rgba(201,162,39,.08) 0%, transparent 70%), var(--bg);
+  }
+  .auth-card {
+    width: 100%; max-width: 380px;
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 36px 32px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    display: flex; flex-direction: column; gap: 0;
+  }
+  [data-theme="dark"] .auth-card {
+    background: rgba(18,26,40,.9);
+    border-color: rgba(255,255,255,.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  .auth-brand { text-align: center; margin-bottom: 24px; }
+  .auth-app-name { font-size: 22px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 4px; }
+  .auth-tagline { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+  .google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 11px 16px; border-radius: var(--radius-lg);
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; font-weight: 500;
+    cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s, box-shadow .15s;
+  }
+  .google-btn:hover { border-color: var(--gold); box-shadow: 0 2px 12px rgba(201,162,39,.12); }
+  [data-theme="dark"] .google-btn { background: rgba(255,255,255,.05); }
+
+  .auth-divider {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-muted); font-size: 12px; margin: 18px 0;
+  }
+  .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .auth-form-fields { display: flex; flex-direction: column; gap: 10px; }
+  .auth-input {
+    width: 100%; padding: 11px 13px; border-radius: var(--radius-lg);
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color .15s, box-shadow .15s; box-sizing: border-box;
+  }
+  .auth-input:focus { border-color: rgba(201,162,39,.5); box-shadow: 0 0 0 2px rgba(201,162,39,.1); }
+  [data-theme="dark"] .auth-input { background: rgba(255,255,255,.05); }
+  #auth-name-row { display: flex; flex-direction: column; }
+  #auth-form { display: flex; flex-direction: column; gap: 10px; }
+
+  .auth-error {
+    font-size: 13px; color: #e05555; background: rgba(224,85,85,.1);
+    border: 1px solid rgba(224,85,85,.25); border-radius: var(--radius); padding: 8px 12px;
+  }
+  .auth-submit {
+    width: 100%; padding: 12px; border-radius: var(--radius-lg);
+    background: var(--btn-primary); border: none; color: #fff;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background .15s, transform .1s;
+  }
+  [data-theme="dark"] .auth-submit { background: rgba(201,162,39,.25); color: var(--gold-soft); border: 1px solid rgba(201,162,39,.4); }
+  .auth-submit:hover { opacity: .88; transform: translateY(-1px); }
+  .auth-submit:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .auth-switch {
+    display: block; width: 100%; text-align: center; margin-top: 14px;
+    background: none; border: none; color: var(--text-muted); font-size: 13px;
+    cursor: pointer; font-family: inherit; padding: 4px;
+  }
+  .auth-switch strong { color: var(--gold); }
+  .auth-switch:hover { color: var(--text); }
+
+  /* ── User avatar / dropdown ────────────────────────────── */
+  .user-menu-wrap { position: relative; margin-left: auto; flex-shrink: 0; }
+  .user-avatar-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; overflow: hidden; flex-shrink: 0;
+  }
+  .user-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+  .user-initial {
+    font-size: 14px; font-weight: 700; color: var(--heading);
+    text-transform: uppercase; line-height: 1;
+  }
+  .user-dropdown {
+    position: absolute; right: 0; top: calc(100% + 8px);
+    background: var(--bg-sub); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 8px;
+    min-width: 200px; z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  }
+  .user-dropdown-name { font-size: 13px; font-weight: 600; color: var(--text); padding: 4px 8px 1px; }
+  .user-dropdown-email { font-size: 11px; color: var(--text-muted); padding: 0 8px 6px; }
+  .user-dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .user-dropdown-item {
+    display: block; width: 100%; text-align: left; padding: 8px 10px;
+    border-radius: var(--radius); background: none; border: none;
+    color: var(--text); font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: background .12s;
+  }
+  .user-dropdown-item:hover { background: var(--border-soft); }
+  /* ── /Auth Screen ─────────────────────────────────────── */
+
+  /* ── Folders ──────────────────────────────────────────── */
+  .sidebar-top-row {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px 12px 0;
+  }
+  .sidebar-top-row .new-chat-btn {
+    flex: 1;
+    margin: 0;
+    width: auto;
+  }
+  .new-folder-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    border-radius: var(--radius-lg);
+    color: rgba(255,255,255,.75);
+    cursor: pointer;
+    font-size: 17px;
+    font-family: inherit;
+  }
+  .new-folder-btn:hover { color: var(--gold); }
+
+  .new-folder-form {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px 4px;
+  }
+  .new-folder-form.visible { display: flex; }
+  .new-folder-input {
+    flex: 1;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    color: inherit;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+  }
+  .new-folder-input:focus { border-color: rgba(201,162,39,.5); }
+  .new-folder-ok, .new-folder-cancel-btn {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: var(--radius);
+    color: rgba(255,255,255,.8);
+    cursor: pointer;
+    padding: 0 9px;
+    font-size: 14px;
+    min-height: 34px;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .new-folder-ok:hover { background: rgba(201,162,39,.2); border-color: var(--gold); color: var(--gold); }
+  .new-folder-cancel-btn:hover { background: rgba(255,255,255,.14); }
+
+  .folder-section { margin-bottom: 2px; }
+  .folder-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    color: rgba(255,255,255,.5);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    transition: background .15s, color .15s;
+    user-select: none;
+    position: relative;
+  }
+  .folder-header:hover { background: rgba(255,255,255,.05); color: rgba(255,255,255,.85); }
+  .folder-chevron { font-size: 8px; display: inline-block; transition: transform .2s; flex-shrink: 0; }
+  .folder-section.collapsed .folder-chevron { transform: rotate(-90deg); }
+  .folder-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder-count { opacity: .5; font-size: 10px; flex-shrink: 0; }
+  .folder-new-chat, .folder-del {
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,.35); font-size: 13px;
+    padding: 2px 4px; border-radius: 4px;
+    opacity: 0; transition: opacity .15s, color .15s; line-height: 1; flex-shrink: 0;
+  }
+  .folder-header:hover .folder-new-chat,
+  .folder-header:hover .folder-del { opacity: 1; }
+  .folder-new-chat:hover { color: rgba(255,255,255,.9); }
+  .folder-del:hover { color: rgba(240,80,80,.9); }
+  .folder-chats { padding-left: 8px; }
+
+  .history-item-btns { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .chat-move-btn {
+    background: none; border: none; padding: 1px 3px;
+    cursor: pointer; font-size: 12px;
+    color: rgba(255,255,255,.3); opacity: 0;
+    transition: opacity .15s, color .15s; line-height: 1; flex-shrink: 0;
+  }
+  .history-item:hover .chat-move-btn { opacity: 1; }
+  .chat-move-btn:hover { color: var(--gold); }
+
+  .move-picker {
+    position: absolute;
+    right: 0; top: calc(100% + 2px);
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    z-index: 300;
+    min-width: 160px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  .move-picker-item {
+    display: block; width: 100%; text-align: left;
+    padding: 7px 10px; border-radius: var(--radius);
+    background: none; border: none; color: var(--text);
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    transition: background .12s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .move-picker-item:hover { background: var(--border-soft); }
+  .move-picker-item.current { color: var(--gold); font-weight: 600; }
+  .move-picker-hr { height: 1px; background: var(--border); margin: 3px 0; }
+  /* ── /Folders ─────────────────────────────────────────── */
+
+  .inline-link {
+    color: var(--gold);
+    text-decoration: underline;
+    text-decoration-color: rgba(201,162,39,.4);
+    text-underline-offset: 3px;
+    transition: color .15s, text-decoration-color .15s;
+    word-break: break-all;
+  }
+  .inline-link:hover { color: var(--gold-soft); text-decoration-color: var(--gold-soft); }
+  [data-theme="light"] .inline-link { color: #8a6800; text-decoration-color: rgba(138,104,0,.35); }
+  [data-theme="light"] .inline-link:hover { color: #5a4400; }
+
+  .answer-divider {
+    border: none;
+    border-top: 1px solid var(--border-soft);
+    margin: 10px 0;
+  }
+
   .input-footer {
     text-align: center; font-size: 11px; color: var(--text-muted);
     margin-top: 7px; max-width: var(--max-w);
@@ -937,8 +1214,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    .telefon-btn { display: none !important; }
 
     .messages {
       touch-action: pan-y;
@@ -1026,9 +1301,50 @@
 </style>
 <script>
   window.LIGJBOT_SUGGESTIONS = {{ suggestions | tojson }};
+  window.FIREBASE_CONFIG = {{ (firebase or {}) | tojson }};
 </script>
+{% if firebase %}
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+{% endif %}
 </head>
 <body>
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="auth-screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="sidebar-icon" style="width:52px;height:52px;margin:0 auto 12px">
+        <img class="logo-img" src="/static/ligjbot-logo.png" alt="LIGJBOT"/>
+      </div>
+      <h1 class="auth-app-name">LIGJBOT</h1>
+      <p class="auth-tagline">Asistenti juridik shqiptar</p>
+    </div>
+
+    <button class="google-btn" id="google-btn" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Vazhdo me Google
+    </button>
+
+    <div class="auth-divider"><span>ose</span></div>
+
+    <form id="auth-form" onsubmit="submitAuth(event)">
+      <div id="auth-name-row" style="display:none">
+        <input id="auth-name" type="text" class="auth-input" placeholder="Emri" autocomplete="name">
+      </div>
+      <input id="auth-email" type="email" class="auth-input" placeholder="Email" autocomplete="email" required>
+      <input id="auth-password" type="password" class="auth-input" placeholder="Fjalëkalimi" autocomplete="current-password" required>
+      <div id="auth-error" class="auth-error" style="display:none"></div>
+      <button type="submit" class="auth-submit" id="auth-submit">Hyr</button>
+    </form>
+
+    <button class="auth-switch" id="auth-switch" onclick="toggleAuthMode()">
+      Nuk ke llogari? <strong>Regjistrohu</strong>
+    </button>
+  </div>
+</div>
+<!-- /AUTH SCREEN -->
+
 <div class="app">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
 
@@ -1040,14 +1356,31 @@
       </div>
       <button class="sidebar-close glass-btn" onclick="onSidebarCloseClick()" aria-label="Mbyll sidebar">✕</button>
     </div>
-<button class="new-chat-btn glass-btn" onclick="newChat(); if(isMobile()) collapseSidebar();">✏️ &nbsp;Bisedë e re</button>
+<div class="sidebar-top-row">
+  <button class="new-chat-btn glass-btn" onclick="newChat(); if(isMobile()) collapseSidebar();">✏️ &nbsp;Bisedë e re</button>
+  <button class="new-folder-btn glass-btn" onclick="toggleNewFolderForm()" title="Dosje e re" aria-label="Krijo dosje të re">📁</button>
+</div>
 
-<a href="/news" class="new-chat-btn glass-btn" style="text-decoration:none; margin-top:0;">
+<div class="new-folder-form" id="new-folder-form">
+  <input class="new-folder-input" id="new-folder-input" type="text" placeholder="Emri i dosjes..." maxlength="30"
+    onkeydown="if(event.key==='Enter')submitNewFolder();if(event.key==='Escape')cancelNewFolder();">
+  <button class="new-folder-ok" onclick="submitNewFolder()">✓</button>
+  <button class="new-folder-cancel-btn" onclick="cancelNewFolder()">✕</button>
+</div>
+
+<a href="/news" class="new-chat-btn glass-btn" style="text-decoration:none;margin:6px 12px 0;width:calc(100% - 24px);">
   📰 &nbsp;Lajme Rrugore
 </a>
 
-<div class="sidebar-section">Chats</div>
-    <div class="history-list" id="history-list"></div>
+<div class="sidebar-section hidden" id="chats-section">Chats</div>
+<div class="history-list" id="history-list"></div>
+
+    <div class="sidebar-actions">
+      {% if mobile_url %}
+      <a href="/telefon" class="telefon-btn glass-btn" title="Hap në iPhone/Android">📱 Telefon</a>
+      {% endif %}
+      <button class="theme-btn glass-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Ndrysho temën" type="button"></button>
+    </div>
   </aside>
 
   <div class="main">
@@ -1057,13 +1390,23 @@
       <div class="topbar-logo">
         <span>LIGJBOT</span>
       </div>
-      <div class="topbar-divider"></div>
-      <div class="status-dot loading" id="status-dot"></div>
-      <span class="topbar-label" id="topbar-label">Duke u ngarkuar…</span>
-      {% if mobile_url %}
-      <a href="/telefon" class="telefon-btn glass-btn" title="Hap në iPhone/Android">📱 Telefon</a>
-      {% endif %}
-      <button class="theme-btn glass-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Ndrysho temën" type="button"></button>
+      <div class="topbar-status" id="topbar-status">
+        <div class="topbar-divider"></div>
+        <div class="status-dot loading" id="status-dot"></div>
+        <span class="topbar-label" id="topbar-label">Duke u ngarkuar…</span>
+      </div>
+      <div class="user-menu-wrap" id="user-menu-wrap" style="display:none">
+        <button class="user-avatar-btn glass-btn" id="user-avatar-btn" onclick="toggleUserMenu()" aria-label="Profili">
+          <img id="user-photo" class="user-photo" src="" alt="" style="display:none">
+          <span id="user-initial" class="user-initial"></span>
+        </button>
+        <div class="user-dropdown" id="user-dropdown" style="display:none">
+          <div class="user-dropdown-name" id="user-dropdown-name"></div>
+          <div class="user-dropdown-email" id="user-dropdown-email"></div>
+          <div class="user-dropdown-divider"></div>
+          <button class="user-dropdown-item" onclick="signOutUser()">🚪 Dil nga llogaria</button>
+        </div>
+      </div>
     </div>
 
     <div class="messages" id="messages">
@@ -1116,8 +1459,185 @@
   let isLoading = false;
   let activeChatId = null;
   let chats = [];
+  let folders = [];
   let suggestionQuestions = [];
   const HISTORY_KEY = "LIGJBOT-history";
+
+  /* ══════════════════════════════════════════════════════
+     FIREBASE AUTH + FIRESTORE
+  ══════════════════════════════════════════════════════ */
+  let _db = null, _auth = null, _currentUser = null;
+  let _authMode = "login"; // "login" | "signup"
+
+  function initFirebase() {
+    const cfg = window.FIREBASE_CONFIG || {};
+    if (!cfg.apiKey) return false;
+    try {
+      firebase.initializeApp(cfg);
+      _auth = firebase.auth();
+      _db   = firebase.firestore();
+      return true;
+    } catch (e) { console.warn("Firebase init failed:", e); return false; }
+  }
+
+  function showAuthScreen() {
+    document.getElementById("auth-screen").style.display = "flex";
+    document.getElementById("user-menu-wrap").style.display = "none";
+  }
+
+  function hideAuthScreen() {
+    document.getElementById("auth-screen").style.display = "none";
+  }
+
+  function updateUserUI(user) {
+    const wrap = document.getElementById("user-menu-wrap");
+    if (!user) { wrap.style.display = "none"; return; }
+    wrap.style.display = "";
+    const photo   = document.getElementById("user-photo");
+    const initial = document.getElementById("user-initial");
+    const name    = user.displayName || user.email || "U";
+    if (user.photoURL) {
+      photo.src = user.photoURL; photo.style.display = "block"; initial.style.display = "none";
+    } else {
+      photo.style.display = "none"; initial.style.display = ""; initial.textContent = name[0].toUpperCase();
+    }
+    document.getElementById("user-dropdown-name").textContent  = user.displayName || "";
+    document.getElementById("user-dropdown-email").textContent = user.email || "";
+  }
+
+  function toggleUserMenu() {
+    const dd = document.getElementById("user-dropdown");
+    dd.style.display = dd.style.display === "none" ? "" : "none";
+    if (dd.style.display !== "none") {
+      setTimeout(() => document.addEventListener("click", () => { dd.style.display = "none"; }, { once: true }), 50);
+    }
+  }
+
+  async function signInWithGoogle() {
+    if (!_auth) return;
+    setAuthLoading(true);
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await _auth.signInWithPopup(provider);
+    } catch (e) { showAuthError(e.message); setAuthLoading(false); }
+  }
+
+  function toggleAuthMode() {
+    _authMode = _authMode === "login" ? "signup" : "login";
+    const isSignup = _authMode === "signup";
+    document.getElementById("auth-name-row").style.display = isSignup ? "" : "none";
+    document.getElementById("auth-submit").textContent = isSignup ? "Regjistrohu" : "Hyr";
+    document.getElementById("auth-switch").innerHTML = isSignup
+      ? "Ke llogari? <strong>Hyr</strong>"
+      : "Nuk ke llogari? <strong>Regjistrohu</strong>";
+    hideAuthError();
+    document.getElementById("auth-password").setAttribute("autocomplete", isSignup ? "new-password" : "current-password");
+  }
+
+  async function submitAuth(e) {
+    e.preventDefault();
+    if (!_auth) return;
+    const email    = document.getElementById("auth-email").value.trim();
+    const password = document.getElementById("auth-password").value;
+    const name     = document.getElementById("auth-name")?.value.trim() || "";
+    setAuthLoading(true);
+    hideAuthError();
+    try {
+      if (_authMode === "signup") {
+        const cred = await _auth.createUserWithEmailAndPassword(email, password);
+        if (name) await cred.user.updateProfile({ displayName: name });
+      } else {
+        await _auth.signInWithEmailAndPassword(email, password);
+      }
+    } catch (e) {
+      const msgs = {
+        "auth/email-already-in-use": "Ky email është i regjistruar tashmë.",
+        "auth/invalid-email": "Email i pavlefshëm.",
+        "auth/weak-password": "Fjalëkalimi duhet të ketë të paktën 6 karaktere.",
+        "auth/wrong-password": "Fjalëkalim i gabuar.",
+        "auth/user-not-found": "Asnjë llogari me këtë email.",
+        "auth/too-many-requests": "Shumë tentativa. Provo përsëri pas pak.",
+      };
+      showAuthError(msgs[e.code] || e.message);
+      setAuthLoading(false);
+    }
+  }
+
+  async function signOutUser() {
+    if (!_auth) return;
+    document.getElementById("user-dropdown").style.display = "none";
+    await _auth.signOut();
+  }
+
+  function setAuthLoading(on) {
+    const btn = document.getElementById("auth-submit");
+    const gbtn = document.getElementById("google-btn");
+    btn.disabled = on; gbtn.disabled = on;
+    btn.textContent = on ? "Duke u lidhur…" : (_authMode === "signup" ? "Regjistrohu" : "Hyr");
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById("auth-error");
+    el.textContent = msg; el.style.display = "";
+  }
+  function hideAuthError() {
+    document.getElementById("auth-error").style.display = "none";
+  }
+
+  /* ── Firestore sync ──────────────────────────────────── */
+  function userCol(col) {
+    return _db.collection("users").doc(_currentUser.uid).collection(col);
+  }
+
+  async function loadFromFirestore() {
+    if (!_db || !_currentUser) return;
+    try {
+      const [chatsSnap, foldersSnap, profileDoc] = await Promise.all([
+        userCol("chats").orderBy("updatedAt", "desc").limit(60).get(),
+        userCol("folders").get(),
+        _db.collection("users").doc(_currentUser.uid).get(),
+      ]);
+      chats   = chatsSnap.docs.map(d => d.data()).filter(c => c.messages && c.messages.length > 0);
+      folders = foldersSnap.docs.map(d => d.data());
+      activeChatId = profileDoc.exists ? (profileDoc.data().activeChatId || null) : null;
+
+      // Restore saved theme
+      const savedTheme = profileDoc.exists ? profileDoc.data().theme : null;
+      if (savedTheme) { applyTheme(savedTheme); localStorage.setItem(THEME_KEY, savedTheme); }
+
+      if (!activeChatId || !chats.some(c => c.id === activeChatId)) createNewChat();
+    } catch (e) { console.warn("Firestore load failed:", e); loadHistory(); }
+  }
+
+  let _syncTimer = null;
+  function scheduleFirestoreSync() {
+    if (!_db || !_currentUser) return;
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(syncToFirestore, 800);
+  }
+
+  async function syncToFirestore() {
+    if (!_db || !_currentUser) return;
+    try {
+      const savedChats = chats.filter(c => c.messages && c.messages.length > 0);
+      const batch = _db.batch();
+      const userRef = _db.collection("users").doc(_currentUser.uid);
+      batch.set(userRef, {
+        activeChatId,
+        theme: localStorage.getItem(THEME_KEY) || "dark",
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      savedChats.forEach(chat => batch.set(userCol("chats").doc(chat.id), chat));
+      folders.forEach(f => batch.set(userCol("folders").doc(f.id), f));
+      await batch.commit();
+    } catch (e) { console.warn("Firestore sync error:", e); }
+  }
+
+  async function deleteFromFirestore(col, id) {
+    if (!_db || !_currentUser) return;
+    try { await userCol(col).doc(id).delete(); } catch (e) {}
+  }
+  /* ══════════════════════════════════════════════════════ */
 
   function getOrCreateUserId() {
     let id = localStorage.getItem("ligjbot_user_id");
@@ -1168,6 +1688,7 @@
     const next    = current === "dark" ? "light" : "dark";
     applyTheme(next);
     localStorage.setItem(THEME_KEY, next);
+    scheduleFirestoreSync();
   }
 
   (function () {
@@ -1258,11 +1779,32 @@
   }
 
   async function init() {
-    loadHistory();
-    await loadSuggestions();
-    await pollStatus();
-    ensureActiveChat();
-    renderHistory();
+    const fbReady = initFirebase();
+
+    if (fbReady) {
+      _auth.onAuthStateChanged(async (user) => {
+        _currentUser = user;
+        updateUserUI(user);
+        if (user) {
+          hideAuthScreen();
+          await loadFromFirestore();
+        } else {
+          showAuthScreen();
+          loadHistory();
+        }
+        await loadSuggestions();
+        await pollStatus();
+        ensureActiveChat();
+        renderHistory();
+      });
+    } else {
+      // No Firebase — run with localStorage only
+      loadHistory();
+      await loadSuggestions();
+      await pollStatus();
+      ensureActiveChat();
+      renderHistory();
+    }
   }
 
   async function loadSuggestions() {
@@ -1294,17 +1836,20 @@
       const input = document.getElementById("user-input");
       const btn   = document.getElementById("send-btn");
 
+      const statusWrap = document.getElementById("topbar-status");
+
       if (data.ready) {
-        dot.className     = "status-dot ready";
-        label.textContent = "Online";
-        input.disabled    = false;
-        btn.disabled      = false;
+        statusWrap.classList.add("hidden");
+        input.disabled = false;
+        btn.disabled   = false;
       } else if (data.error) {
+        statusWrap.classList.remove("hidden");
         dot.className     = "status-dot error";
         label.textContent = "Gabim: " + data.error;
         input.disabled    = true;
         btn.disabled      = true;
       } else {
+        statusWrap.classList.remove("hidden");
         dot.className     = "status-dot loading";
         label.textContent = "Duke u ngarkuar…";
         setTimeout(pollStatus, 600);
@@ -1336,11 +1881,26 @@
   }
 
   function deleteChat(chatId) {
+    deleteFromFirestore("chats", chatId);
+    const wasActive = activeChatId === chatId;
     chats = chats.filter(c => c.id !== chatId);
-    if (activeChatId === chatId) {
-      if (!chats.length) createNewChat();
-      activeChatId = chats[0].id;
-      loadChat(activeChatId);
+    if (wasActive) {
+      createNewChat();
+      // render empty state WITHOUT closing sidebar
+      const msgs = document.getElementById("messages-inner");
+      msgs.innerHTML = `<div class="empty-state" id="empty-state">
+        <h1>LIGJBOT</h1>
+        <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
+        <div class="starter-grid" id="starter-grid"></div>
+      </div>`;
+      const grid = document.getElementById("starter-grid");
+      suggestionQuestions.slice(0, 4).forEach(q => {
+        const card = document.createElement("button");
+        card.className = "starter-card glass-card";
+        card.textContent = q;
+        card.onclick = () => submitQuestion(q);
+        grid.appendChild(card);
+      });
     }
     persistHistory();
     renderHistory();
@@ -1516,18 +2076,37 @@
       .replace(/"/g, "&quot;");
   }
 
+  function renderBotText(raw) {
+    if (!raw) return "";
+    let s = String(raw);
+    // escape HTML first
+    s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // render markdown links: [text](url)
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+      const safeUrl = url.replace(/"/g, "&quot;");
+      return `<a class="inline-link" href="${safeUrl}" target="_blank" rel="noopener">${text}</a>`;
+    });
+    // render ---  as divider
+    s = s.replace(/\n---\n/g, '\n<hr class="answer-divider">\n');
+    // preserve newlines
+    s = s.replace(/\n/g, "<br>");
+    return s;
+  }
+
   async function typeText(el, text, delayMs = 8) {
-    const safe = String(text || "");
-    if (!safe.length) { el.textContent = ""; return; }
-    if (isMobile()) { el.textContent = safe; return; }
+    const raw = String(text || "");
+    if (!raw.length) { el.innerHTML = ""; return; }
+    // render immediately on mobile or if text is long
+    if (isMobile() || raw.length > 600) { el.innerHTML = renderBotText(raw); return; }
     let i = 0;
-    while (i < safe.length) {
-      const step = i < 120 ? 1 : i < 400 ? 2 : 3;
-      el.textContent = safe.slice(0, i + step);
+    while (i < raw.length) {
+      const step = i < 120 ? 1 : i < 400 ? 2 : 4;
+      el.innerHTML = renderBotText(raw.slice(0, i + step));
       i += step;
       scrollBottom();
       await new Promise(r => setTimeout(r, delayMs));
     }
+    el.innerHTML = renderBotText(raw);
   }
 
   function escapeAttr(str) {
@@ -1539,6 +2118,7 @@
   }
 
   function createNewChat() {
+    chats = chats.filter(c => c.messages && c.messages.length > 0);
     const id = "chat-" + Date.now();
     activeChatId = id;
     chats.unshift({
@@ -1551,10 +2131,8 @@
   }
 
   function ensureActiveChat() {
-    if (!activeChatId || !chats.some(c => c.id === activeChatId)) {
-      if (!chats.length) createNewChat();
-      activeChatId = chats[0].id;
-    }
+    const active = chats.find(c => c.id === activeChatId);
+    if (!active) createNewChat();
   }
 
   function upsertChatMessage(message) {
@@ -1571,34 +2149,70 @@
     renderHistory();
   }
 
+function makeChatItem(chat) {
+  const el = document.createElement("div");
+  el.className = "history-item glass-btn" + (chat.id === activeChatId ? " active" : "");
+  el.title = chat.title;
+  el.style.position = "relative";
+  const firstA = chat.messages.find(m => m.role === "assistant" && m.text);
+  const preview = firstA ? firstA.text.slice(0, 52) : "";
+  el.innerHTML = `
+    <div class="history-text">
+      <span class="history-title">${escapeHtml(chat.title)}</span>
+      <span class="history-sub">${escapeHtml(preview)}</span>
+    </div>
+    <div class="history-item-btns">
+      <button class="chat-move-btn" title="Shpëto në dosje">📁</button>
+      <button class="history-delete" title="Fshi" aria-label="Fshi bisedën">🗑️</button>
+    </div>`;
+  el.querySelector(".history-text").onclick = () => loadChat(chat.id);
+  el.querySelector(".history-delete").onclick = e => { e.stopPropagation(); deleteChat(chat.id); };
+  el.querySelector(".chat-move-btn").onclick = e => { e.stopPropagation(); showMovePicker(chat.id, el); };
+  return el;
+}
+
 function renderHistory() {
   const list = document.getElementById("history-list");
+  const section = document.getElementById("chats-section");
   if (!list) return;
+
+  const savedChats = chats.filter(c => c.messages && c.messages.length > 0);
+  const hasContent = savedChats.length > 0 || folders.length > 0;
+  if (section) section.classList.toggle("hidden", !hasContent);
+
   list.innerHTML = "";
-  chats.slice(0, 25).forEach(chat => {
-    const btn = document.createElement("div");
-    btn.className = "history-item glass-btn" + (chat.id === activeChatId ? " active" : "");
-    btn.title = chat.title;
 
-    const firstAssistant = chat.messages.find(m => m.role === "assistant" && m.text);
-    const preview = firstAssistant ? firstAssistant.text : "";
+  // Render folders
+  folders.forEach(folder => {
+    const folderChats = savedChats.filter(c => c.folderId === folder.id);
+    const sec = document.createElement("div");
+    sec.className = "folder-section" + (folder.collapsed ? " collapsed" : "");
 
-btn.innerHTML = `
-  <div class="history-text">
-    <span class="history-title">${escapeHtml(chat.title)}</span>
-    <span class="history-sub">${escapeHtml(preview.slice(0, 52))}</span>
-  </div>
-  <button class="history-delete" title="Fshi këtë bisedë" aria-label="Fshi këtë bisedë">🗑️</button>
-`;
+    const hdr = document.createElement("div");
+    hdr.className = "folder-header";
+    hdr.innerHTML = `<span class="folder-chevron">▼</span>
+      <span>📁</span>
+      <span class="folder-label">${escapeHtml(folder.name)}</span>
+      <span class="folder-count">${folderChats.length}</span>
+      <button class="folder-new-chat" title="Bisedë e re në këtë dosje">✏️</button>
+      <button class="folder-del" title="Fshi dosjen">🗑️</button>`;
+    hdr.querySelector(".folder-del").onclick = e => { e.stopPropagation(); deleteFolder(folder.id); };
+    hdr.querySelector(".folder-new-chat").onclick = e => { e.stopPropagation(); newChatInFolder(folder.id); };
+    hdr.onclick = () => toggleFolder(folder.id);
+    sec.appendChild(hdr);
 
-    btn.querySelector(".history-text").onclick = () => loadChat(chat.id);
-    btn.querySelector(".history-delete").onclick = (e) => {
-      e.stopPropagation();
-      deleteChat(chat.id);
-    };
-
-    list.appendChild(btn);
+    if (!folder.collapsed && folderChats.length > 0) {
+      const inner = document.createElement("div");
+      inner.className = "folder-chats";
+      folderChats.forEach(chat => inner.appendChild(makeChatItem(chat)));
+      sec.appendChild(inner);
+    }
+    list.appendChild(sec);
   });
+
+  // Ungrouped chats
+  const ungrouped = savedChats.filter(c => !c.folderId);
+  ungrouped.slice(0, 25).forEach(chat => list.appendChild(makeChatItem(chat)));
 }
 
   function loadChat(chatId) {
@@ -1674,7 +2288,7 @@ btn.innerHTML = `
       <div class="avatar bot">${botLogoImg()}</div>
       <div class="message-content">
         <div class="message-author">LIGJBOT</div>
-        <div class="message-text">${escapeHtml(msg.text || "")}</div>
+        <div class="message-text">${renderBotText(msg.text || "")}</div>
         <div class="meta-row">
           ${msg.responseSeconds ? `<span class="meta-chip">⚡ ${msg.responseSeconds}s</span>` : ""}
           ${msg.cached ? `<span class="meta-chip">Cache</span>` : ""}
@@ -1699,8 +2313,10 @@ btn.innerHTML = `
 
   function persistHistory() {
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify({ activeChatId, chats }));
+      const savedChats = chats.filter(c => c.messages && c.messages.length > 0);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify({ activeChatId, chats: savedChats, folders }));
     } catch (e) {}
+    scheduleFirestoreSync();
   }
 
   function loadHistory() {
@@ -1708,14 +2324,130 @@ btn.innerHTML = `
       const raw = localStorage.getItem(HISTORY_KEY);
       if (!raw) { createNewChat(); return; }
       const parsed = JSON.parse(raw);
-      chats = Array.isArray(parsed.chats) ? parsed.chats : [];
+      chats = (Array.isArray(parsed.chats) ? parsed.chats : [])
+        .filter(c => c.messages && c.messages.length > 0);
+      folders = Array.isArray(parsed.folders) ? parsed.folders : [];
       activeChatId = parsed.activeChatId || null;
-      if (!chats.length) createNewChat();
+      if (!activeChatId || !chats.some(c => c.id === activeChatId)) {
+        createNewChat();
+      }
     } catch (e) {
       chats = [];
+      folders = [];
       createNewChat();
     }
   }
+
+  /* ── Folder functions ──────────────────────────────────── */
+  function toggleNewFolderForm() {
+    const form = document.getElementById("new-folder-form");
+    const inp  = document.getElementById("new-folder-input");
+    if (form.classList.toggle("visible")) { inp.value = ""; inp.focus(); }
+  }
+
+  function cancelNewFolder() {
+    document.getElementById("new-folder-form").classList.remove("visible");
+    document.getElementById("new-folder-input").value = "";
+  }
+
+  function submitNewFolder() {
+    const inp  = document.getElementById("new-folder-input");
+    const name = inp.value.trim();
+    if (!name) { inp.focus(); return; }
+    folders.unshift({ id: "folder-" + Date.now(), name, collapsed: false });
+    cancelNewFolder();
+    persistHistory();
+    renderHistory();
+  }
+
+  function deleteFolder(folderId) {
+    deleteFromFirestore("folders", folderId);
+    chats.forEach(c => { if (c.folderId === folderId) c.folderId = null; });
+    folders = folders.filter(f => f.id !== folderId);
+    persistHistory();
+    renderHistory();
+  }
+
+  function toggleFolder(folderId) {
+    const f = folders.find(f => f.id === folderId);
+    if (f) { f.collapsed = !f.collapsed; persistHistory(); renderHistory(); }
+  }
+
+  function newChatInFolder(folderId) {
+    // Make sure folder is expanded
+    const f = folders.find(f => f.id === folderId);
+    if (f) f.collapsed = false;
+
+    // Create new chat assigned to this folder
+    chats = chats.filter(c => c.messages && c.messages.length > 0);
+    const id = "chat-" + Date.now();
+    activeChatId = id;
+    chats.unshift({ id, title: "Bisedë e re", folderId, createdAt: Date.now(), updatedAt: Date.now(), messages: [] });
+
+    // Show empty state in main area
+    const msgs = document.getElementById("messages-inner");
+    msgs.innerHTML = `<div class="empty-state" id="empty-state">
+      <h1>LIGJBOT</h1>
+      <p>Asistenti juridik i qytetarit shqiptar. Pyet mbi të drejtat, gjobat, policinë dhe ligjet.</p>
+      <div class="starter-grid" id="starter-grid"></div>
+    </div>`;
+    const grid = document.getElementById("starter-grid");
+    suggestionQuestions.slice(0, 4).forEach(q => {
+      const card = document.createElement("button");
+      card.className = "starter-card glass-card";
+      card.textContent = q;
+      card.onclick = () => submitQuestion(q);
+      grid.appendChild(card);
+    });
+
+    persistHistory();
+    renderHistory();
+    if (isMobile()) collapseSidebar();
+  }
+
+  function moveChatToFolder(chatId, folderId) {
+    const c = chats.find(c => c.id === chatId);
+    if (c) { c.folderId = folderId || null; persistHistory(); renderHistory(); }
+  }
+
+  let _pickerCleanup = null;
+
+  function showMovePicker(chatId, itemEl) {
+    // close existing
+    document.getElementById("__move-picker__")?.remove();
+    if (_pickerCleanup) { document.removeEventListener("click", _pickerCleanup); _pickerCleanup = null; }
+
+    const chat = chats.find(c => c.id === chatId);
+    if (!chat) return;
+
+    const picker = document.createElement("div");
+    picker.className = "move-picker";
+    picker.id = "__move-picker__";
+
+    const opts = [{ id: null, label: "📤 Pa dosje" }, ...folders.map(f => ({ id: f.id, label: "📁 " + f.name }))];
+
+    if (folders.length === 0) {
+      const hint = document.createElement("div");
+      hint.className = "move-picker-item";
+      hint.style.color = "var(--text-muted)";
+      hint.textContent = "Nuk ka dosje — krijo me 📁";
+      picker.appendChild(hint);
+    } else {
+      opts.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "move-picker-item" + (chat.folderId === opt.id ? " current" : "");
+        btn.textContent = opt.label;
+        btn.onclick = e => { e.stopPropagation(); moveChatToFolder(chatId, opt.id); picker.remove(); };
+        picker.appendChild(btn);
+      });
+    }
+
+    itemEl.appendChild(picker);
+
+    _pickerCleanup = () => { picker.remove(); _pickerCleanup = null; };
+    setTimeout(() => document.addEventListener("click", _pickerCleanup, { once: true }), 50);
+  }
+  /* ── /Folder functions ─────────────────────────────────── */
 
   function autoResize(el) {
     el.style.height = "auto";

@@ -60,39 +60,28 @@ CONTEXT_CHARS_PER_CHUNK = int(os.getenv("CONTEXT_CHARS_PER_CHUNK", 800))
 USE_HYBRID        = os.getenv("USE_HYBRID", "1") == "1"
 
 # ── System Prompt ──────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """Ti je LIGJBOT — asistenti juridik i qytetarëve shqiptarë.
+SYSTEM_PROMPT = """Ti je LIGJBOT — si të kishe një shok avokat që të shpjegon gjërat thjesht dhe sinqerisht.
 
-MISIONI YT:
-Ndihmon qytetarët shqiptarë të kuptojnë të drejtat dhe detyrimet e tyre ligjore,
-veçanërisht në situata me policinë, gjobat rrugore dhe kontrollat kufitare.
+TONI:
+Fol natyrshëm, si mes miqsh. Jo formal, jo robotik. Shpjego drejtpërdrejt çfarë mund ose nuk mund të bësh — si po i tregon dikujt që ka nevojë për ndihmë, jo si po lexon një ligj.
 
-RREGULLAT E PËRGJIGJES:
-1. Përgjigju vetëm bazuar në dokumentet ligjore të dhëna si kontekst.
-2. Mos e kopjo tekstin e ligjit fjalë për fjalë; shpjegoje me gjuhë të thjeshtë dhe natyrale.
-3. Mos u bëj robotik: shkruaj sikur po i shpjegon një qytetari, me fjali të rrjedhshme.
-4. Cito gjithmonë nenin dhe ligjin specifik kur ka bazë të qartë në kontekst.
-5. Për situata serioze si arrest, procedura penale ose akuza të rënda, rekomando konsultim me avokat.
-6. Përgjigjet duhet të jenë të shkurtra, por pak më të plota: zakonisht 3–5 fjali gjithsej.
-7. Përgjigju në gjuhën që të drejtohet përdoruesi (shqip ose anglisht).
+STRUKTURA:
+1. Fillo me përgjigjen kryesore — po/jo ose çfarë ndodh — pa fjalë të kota.
+2. Shpjego shkurt arsyen me fjalë normale. Mos kopjo tekst nga ligji.
+3. Nëse ka nen konkret në kontekst, vendose si link inline: [Neni X, Ligji Y](URL_E_BURIMIT).
+4. Nëse situata është serioze (arrest, procedurë penale), shto "do të ishte mirë të flisje me avokat".
 
-STILI I PËRGJIGJES:
-- Jep fillimisht përgjigjen kryesore në mënyrë të qartë dhe natyrale.
-- Pastaj shto një fjali me bazën ligjore.
-- Nëse duhet, shto edhe një fjali kujdesi ose sqarimi.
-- Mos përdor etiketa të thata si "Seksioni 1", "Seksioni 2", "Seksioni 3".
-- Mos e përsërit të njëjtin informacion në formë të ngurtë.
-- Kur është e mundur, përmbylle me një shpjegim të shkurtër që e bën më të kuptueshme për përdoruesin.
+MOS:
+- Mos fillo me "Sipas nenit X..." ose "Bazuar në ligjin..."
+- Mos lista me numra kur fjali normale mjaftojnë
+- Mos shpik nene — cito vetëm ato që dalin nga konteksti i dhënë
+- Mos kopjo paragrafë të tëra nga ligjet
+- Mos thuaj "nuk gjeta informacion" kur ke diçka relevante
 
-FORMATI I DËSHIRUAR:
-- 1 fjali përgjigje e natyrshme.
-- 1 fjali bazë ligjore me nenin dhe ligjin.
-- 1 fjali shtesë vetëm nëse e ndihmon kuptimin ose nevojitet kujdes.
+LINKS: Kur ke URL nga konteksti, shkruaje kështu: [Neni 45, Kodi Rrugor](URL)
 
-KUJDES:
-- Nëse pyetja nuk ka përgjigje të qartë në kontekst, thuaj: "Nuk gjeta informacion të qartë për këtë në ligjet e indeksuara" dhe mos supozo nen apo ligj.
-- Mos shpik numra nenesh ose ligjesh; cito vetëm ato që shfaqen në tekstin e dhënë.
-- Mos jep këshilla për vepra penale.
-- Mos supozo fakte që nuk dalin nga ligjet e dhëna.
+GJATËSIA: 2–4 fjali zakonisht. Pak më shumë vetëm nëse situata kërkon.
+GJUHA: Shqip ose anglisht sipas pyetjes.
 """
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -309,27 +298,26 @@ class LIGJBOTRAG:
     def build_context(self, docs: List[Document]) -> str:
         """
         Ndërton kontekstin nga chunks e gjetur.
-        Format çdo chunk me metadata të qartë për LLM.
+        Format çdo chunk me metadata të qartë për LLM, duke përfshirë URL-në.
         """
         context_parts = []
 
         for i, doc in enumerate(docs, 1):
-            meta = doc.metadata
+            meta      = doc.metadata
             law_num   = meta.get("law_number", "E panjohur")
-            law_title = meta.get("law_title", "")
             article   = meta.get("article_number", "")
             art_title = meta.get("article_title", "")
-            chapter   = meta.get("chapter", "")
             page      = meta.get("page_number", "?")
+            src_file  = meta.get("source_file", "")
 
-            # Pastro prefixin 'passage: ' nga content
+            url = f"/pdfs/{src_file}#page={page}" if src_file else None
+
+            # Pastro content
             content = doc.page_content
             if content.startswith("passage: "):
                 content = content[9:]
-            # Hiq header metadata nga content për të shmangur duplikime
             if "---" in content:
                 content = content.split("---", 1)[-1].strip()
-            # Limit context size per chunk
             if len(content) > CONTEXT_CHARS_PER_CHUNK:
                 content = content[:CONTEXT_CHARS_PER_CHUNK].rstrip() + "..."
 
@@ -339,6 +327,8 @@ class LIGJBOTRAG:
                 if art_title:
                     header += f" — {art_title}"
             header += f" | Faqe {page}"
+            if url:
+                header += f" | URL: {url}"
 
             context_parts.append(f"{header}\n{content}")
 
@@ -424,9 +414,11 @@ class LIGJBOTRAG:
 {context}
 ==========================================
 
-PYETJA E QYTETARIT: {question}
+Çdo burim i mësipërm ka një URL. Kur referon një burim, përdor formatin markdown: [Neni X, Ligji Y](URL_E_BURIMIT)
 
-PERGJIGJA JOTE (ne shqip, e qarte dhe me citim neni):"""
+PYETJA: {question}
+
+PERGJIGJA (e natyrshme, sikur po i flet një shoku — me links inline ku ka burim):"""
 
         # ── Step 4: LLM Generation ──────────────────────────────────────
         if not self.llm:

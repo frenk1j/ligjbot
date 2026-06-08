@@ -3,7 +3,7 @@
 VERIFY SCRIPT v2 - Teston FAISS vector store
 HuggingFace embeddings (falas, local)
 ====================================================
-Perdorim: python src/verify_store.py
+Perdorim: python scripts/verify_store.py
 """
 
 import os
@@ -22,7 +22,7 @@ def verify_vector_store():
 
     if not Path(VECTOR_STORE_PATH).exists():
         print(f"❌ Vector store nuk ekziston: {VECTOR_STORE_PATH}")
-        print("   Ekzekuto: python src/ingestion.py")
+        print("   Ekzekuto: python scripts/ingestion.py")
         return
 
     files = list(Path(VECTOR_STORE_PATH).parent.glob("*"))

@@ -387,53 +387,7 @@ def chat():
 def suggestions():
     return jsonify(SUGGESTIONS)
 
-# -------- News route --------
-import feedparser
-from functools import lru_cache
-import time as _time
-
-NEWS_FEEDS = [
-    {"source": "BalkanWeb",          "url": "https://www.balkanweb.com/feed/"},
-    {"source": "Albaniandailynews",  "url": "https://albaniandailynews.com/feed/"},
-    {"source": "Shqiptarja",         "url": "https://shqiptarja.com/rss"},
-]
-
-NEWS_KEYWORDS = [
-    "kodi rrugor", "road code", "dpshtrr", "patentë", "patent",
-    "gjobë", "gjoba", "kontroll teknik", "sigurim", "transport",
-    "ligj rrugor", "shofer", "aksident", "polici rrugore",
-    "targa", "automjet", "drejtues mjeti",
-]
-
-_news_cache: dict = {"data": [], "ts": 0}
-NEWS_TTL = 900  # 15 minuta
-
-def _fetch_news() -> list:
-    now = _time.time()
-    if _news_cache["data"] and (now - _news_cache["ts"]) < NEWS_TTL:
-        return _news_cache["data"]
-
-    articles = []
-    for feed_info in NEWS_FEEDS:
-        try:
-            feed = feedparser.parse(feed_info["url"])
-            for entry in feed.entries[:30]:
-                text = (entry.get("title", "") + " " + entry.get("summary", "")).lower()
-                if any(kw in text for kw in NEWS_KEYWORDS):
-                    articles.append({
-                        "title":     entry.get("title", ""),
-                        "summary":   entry.get("summary", "")[:220],
-                        "link":      entry.get("link", ""),
-                        "published": entry.get("published", ""),
-                        "source":    feed_info["source"],
-                    })
-        except Exception as e:
-            print(f"[WARN] Feed {feed_info['source']} deshtoi: {e}")
-
-    articles.sort(key=lambda x: x.get("published", ""), reverse=True)
-    _news_cache["data"] = articles
-    _news_cache["ts"]   = now
-    return articles
+from news_feed import fetch_news
 
 @app.route("/news")
 def news_page():
@@ -441,9 +395,8 @@ def news_page():
 
 @app.route("/api/news")
 def api_news():
-    articles = _fetch_news()
+    articles = fetch_news()
     return jsonify({"articles": articles, "count": len(articles)})
-# ----------------------------
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import json
 import csv
+import sys
 from pathlib import Path
 from typing import List
 
@@ -7,12 +8,13 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 
-from rag_core import LIGJBOTRAG  # your RAG engine
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from rag_core import LIGJBOTRAG
 
 load_dotenv()
 
-QUESTIONS_FILE = "eval_questions.json"
-RESULTS_CSV = "eval_results.csv"
+QUESTIONS_FILE = "data/eval_questions.json"
+RESULTS_CSV = "data/eval_results.csv"
 JUDGE_MODEL = "llama-3.1-8b-instant"  # same model is fine
 
 

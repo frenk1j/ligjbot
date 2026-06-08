@@ -32,5 +32,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Uploads & eval output
+uploaded_pdfs/
+data/eval_results.csv
+
 # Logs
 *.log

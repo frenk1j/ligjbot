@@ -24,6 +24,7 @@ Perdorim:
 """
 
 import os
+import re
 import sys
 import argparse
 from pathlib import Path
@@ -39,7 +40,7 @@ try:
     from langchain_groq import ChatGroq
     from langchain_community.retrievers import BM25Retriever  # NEW
     from langchain_core.documents import Document
-    from langchain_core.messages import HumanMessage
+    from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
     from colorama import Fore, Style, init
     init(autoreset=True)
 except ImportError as e:
@@ -49,40 +50,195 @@ except ImportError as e:
 
 # ── Config ─────────────────────────────────────────────────────────────────
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
-LLM_MODEL         = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
+LLM_MODEL         = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
 EMBEDDING_MODEL   = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-large")
 VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH", "./vector_store/faiss_index")
 TOP_K_RESULTS     = int(os.getenv("TOP_K_RESULTS", 3))
 FAST_TOP_K        = int(os.getenv("FAST_TOP_K", 2))
-TEMPERATURE       = float(os.getenv("TEMPERATURE", 0.1))
-MAX_TOKENS        = int(os.getenv("MAX_TOKENS", 512))
+TEMPERATURE       = float(os.getenv("TEMPERATURE", 0.55))
+MAX_TOKENS        = int(os.getenv("MAX_TOKENS", 650))
 CONTEXT_CHARS_PER_CHUNK = int(os.getenv("CONTEXT_CHARS_PER_CHUNK", 800))
 USE_HYBRID        = os.getenv("USE_HYBRID", "1") == "1"
+LEGAL_SCORE_MAX   = float(os.getenv("LEGAL_SCORE_MAX", "0.82"))
 
-# ── System Prompt ──────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """Ti je LIGJBOT — si të kishe një shok avokat që të shpjegon gjërat thjesht dhe sinqerisht.
+# ── System Prompts ───────────────────────────────────────────────────────
+CORE_PERSONA = """Ti je LIGJBOT — miku në chat që njeh mirë ligjet shqiptare.
 
-TONI:
-Fol natyrshëm, si mes miqsh. Jo formal, jo robotik. Shpjego drejtpërdrejt çfarë mund ose nuk mund të bësh — si po i tregon dikujt që ka nevojë për ndihmë, jo si po lexon një ligj.
+Si flet (për ÇDO pyetje):
+- Ngrohtë dhe natyral, si shok që e di temën — jo si robot apo zyrtar.
+- Saktë: thuaj vetëm çfarë di me siguri; mos trill.
+- Përgjigju pyetjes që të bëhet TANI — mos përsërit pyetjen, mos përsërit përgjigje të vjetra.
+- "Unë" = ti (LIGJBOT). "Ti" = personi që pyet. Kurrë mos i këmbe rolet.
+- Shqip i saktë. Fjali të shkurtra.
 
-STRUKTURA:
-1. Fillo me përgjigjen kryesore — po/jo ose çfarë ndodh — pa fjalë të kota.
-2. Shpjego shkurt arsyen me fjalë normale. Mos kopjo tekst nga ligji.
-3. Nëse ka nen konkret në kontekst, vendose si link inline: [Neni X, Ligji Y](URL_E_BURIMIT).
-4. Nëse situata është serioze (arrest, procedurë penale), shto "do të ishte mirë të flisje me avokat".
+FORMATI I PËRGJIGJES (shumë i rëndësishëm):
+- Kthe VETËM tekstin e përgjigjes — asgjë tjetër.
+- MOS shkruaj: "Ti:", "LIGJBOT:", "Përdoruesi:", "Pyetja:", ose format dialogu.
+- MOS përsërit pyetjen e përdoruesit.
 
-MOS:
-- Mos fillo me "Sipas nenit X..." ose "Bazuar në ligjin..."
-- Mos lista me numra kur fjali normale mjaftojnë
-- Mos shpik nene — cito vetëm ato që dalin nga konteksti i dhënë
-- Mos kopjo paragrafë të tëra nga ligjet
-- Mos thuaj "nuk gjeta informacion" kur ke diçka relevante
+Mos: "Sipas ligjit", "Ju lutem", "Jam i gatshëm", "do të jem i gatshëm", avokat."""
 
-LINKS: Kur ke URL nga konteksti, shkruaje kështu: [Neni 45, Kodi Rrugor](URL)
+LEGAL_RULES = """Konteksti ligjor më poshtë është burimi yt për fakte.
+- Fillo me përgjigjen e drejtpërdrejtë (po/jo/shifra), pastaj shpjego thjesht.
+- Përdor vetëm informacion nga konteksti për nene dhe sanksione.
+- Kur citon, link inline: [Neni X, Ligji Y](URL). Mos kopjo paragrafë të gjatë.
+- 2–4 fjali. Gjuha: si pyetja."""
 
-GJATËSIA: 2–4 fjali zakonisht. Pak më shumë vetëm nëse situata kërkon.
-GJUHA: Shqip ose anglisht sipas pyetjes.
-"""
+CASUAL_RULES = """Nuk ke dokumente ligjore për këtë mesazh.
+- Bisedo normalisht, 1–2 fjali miqësore.
+- Nëse pyetja s'është ligjore, përgjigju natyrshëm; nëse ka lidhje me ligjet, fto butësisht të pyesësh konkretisht.
+- Mos cito nene pa nevojë. Gjuha: si pyetja."""
+
+LEGAL_KEYWORDS = (
+    "ligj", "nen", "neni", "polici", "policia", "gjob", "gjoba", "kod", "rrugor",
+    "procedur", "drejtat", "detyrim", "arrest", "denim", "gjykat", "gjykate",
+    "burg", "kundërvaj", "kundervaj", "patent", "patenta", "targa", "shofer",
+    "makina", "kufi", "kontroll", "ndalim", "ndaloj", "ndalojn", "paraburgim",
+    "transport", "leje", "dokument", "gjobat", "ndëshkim", "ndeshkim",
+    "mbaj", "mbaje", "kohe", "koha", "ore", "orë", "ndodh", "nese", "nëse",
+    "lejohet", "ndalohet", "radar", "alkool", "denim", "padit", "ankim",
+    "kontrat", "pune", "punë", "taks", "aksident", "pasaport", "viz",
+    "grind", "dhun", "arm", "drog", "mitur", "familj", "qira", "shtepi", "shtëpi",
+)
+
+
+def is_legal_question(question: str) -> bool:
+    if get_meta_answer(question):
+        return False
+    q = question.lower().strip()
+    return any(kw in q for kw in LEGAL_KEYWORDS)
+
+
+def _norm_question(question: str) -> str:
+    q = question.lower().strip()
+    q = q.replace("ç", "c").replace("ë", "e")
+    q = re.sub(r"[^\w\s]", " ", q)
+    return re.sub(r"\s+", " ", q).strip()
+
+
+def get_meta_answer(question: str) -> Optional[str]:
+    """Përgjigje të fiksuara për pyetje identiteti/salutimi — pa LLM."""
+    q = _norm_question(question)
+
+    if re.search(r"^(pershendetje|hello|hi|hej|miremengjes|miredita)\b", q):
+        return "Hej! Si mund të të ndihmoj me ligjet sot?"
+
+    if re.search(r"\b(si je|si jeni|si kalon|si po shkon|how are you)\b", q):
+        return "Mirë faleminderit! Po jam këtu. Ke ndonjë pyetje për ligjet?"
+
+    if re.search(r"\b(faleminderit|thanks|thank you)\b", q):
+        return "S'ka përse! Nëse ke diçka tjetër, thuaj."
+
+    if re.search(r"\b(kush je|cfare je|cili je|who are you)\b", q):
+        return (
+            "Unë jam LIGJBOT — të ndihmoj me ligjet shqiptare. "
+            "Më pyet për gjoba, policë, leje, të drejtat... ta shpjegoj thjesht."
+        )
+
+    if re.search(r"(cfare|si).*(me )?ndihmon", q) or re.search(r"me ndihmon.*pyes", q):
+        return (
+            "Më shkruaj thjesht çfarë ke në mendje — p.sh. gjoba, policë, leje drejtimi — "
+            "dhe unë ta shpjegoj me fjalë normale, me burime kur duhet."
+        )
+
+    if re.search(r"(cfare ben|cfare bo).*(per mua|pune)", q) or re.search(r"per mua.*(cfare ben|cfare bo)", q):
+        return (
+            "Unë të ndihmoj të kuptosh ligjet — i përkthej nga gjuhë ligjore "
+            "në gjuhë normale, me burime kur duhet. Thuaj çfarë të intereson."
+        )
+
+    if re.search(r"\b(cfare ben|cfare bo|what do you do)\b", q):
+        return (
+            "Unë i shpjegoj ligjet shqiptare me fjalë të thjeshta — "
+            "gjoba, policë, leje, të drejtat. Më pyet konkretisht çfarë të duhet."
+        )
+
+    if re.search(r"\b(cfare mund|si mund te me ndihmosh|si funksionon)\b", q):
+        return (
+            "Më shkruan pyetjen tënde dhe unë ta shpjegoj me fjalë normale, "
+            "me burime nga ligjet kur ka nevojë."
+        )
+
+    return None
+
+
+def _history_to_messages(history: Optional[list], max_pairs: int = 4) -> list:
+    if not history:
+        return []
+    msgs = []
+    for turn in history[-max_pairs * 2:]:
+        content = (turn.get("content") or "").strip()
+        if not content:
+            continue
+        if turn.get("role") == "user":
+            msgs.append(HumanMessage(content=content))
+        elif turn.get("role") == "assistant":
+            msgs.append(AIMessage(content=content))
+    return msgs
+
+
+def _is_broken_answer(text: str) -> bool:
+    if not text or len(text.strip()) < 4:
+        return True
+    if re.search(r"^(Ti|Ju|LIGJBOT|Përdoruesi|Pyetja)\s*:", text, re.I | re.M):
+        return True
+    n = _norm_question(text)
+    broken_patterns = (
+        r"ti je i rendesishem",
+        r"te perdorur si",
+        r"me ben te mund",
+        r"ndihmes i mire qe",
+        r"robot te vetem",
+        r"i gatshem per te",
+        r"do te jem i gatshem",
+        r"pyetjet tuaja ligjore",
+        r"asistenti juaj",
+    )
+    if any(re.search(p, n) for p in broken_patterns):
+        return True
+    if re.match(r"^ti je\b", n) and "?" not in text:
+        return True
+    return False
+
+
+def _strip_dialogue_format(text: str) -> str:
+    """Heq format dialogu që modeli ndonjëherë nxjerr gabimisht."""
+    out = text.strip()
+    m = re.search(r"LIGJBOT\s*:\s*(.+)", out, re.I | re.S)
+    if m:
+        return m.group(1).strip()
+    lines = []
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if re.match(r"^(Ti|Ju|Përdoruesi|User|Pyetja)\s*:", line, re.I):
+            continue
+        line = re.sub(r"^LIGJBOT\s*:\s*", "", line, flags=re.I)
+        lines.append(line)
+    return "\n".join(lines).strip() if lines else out
+
+
+def _clean_answer(text: str) -> str:
+    """Heq fraza robotike, format dialogu dhe paralajmërime."""
+    out = _strip_dialogue_format(text.strip())
+    patterns = [
+        r"\s*Për situata serioze[^.]*avokat[^.]*\.?",
+        r"\s*Konsultohu[^.]*avokat[^.]*\.?",
+        r"\s*Kontaktoni avokatin[^.]*\.?",
+        r"\s*Do të ishte mirë të flisje me avokat[^.]*\.?",
+        r"\s*rekomandoj[^.]*avokat[^.]*\.?",
+        r"^Jam i gatshëm[^.]*\.?\s*",
+        r"^Unë jam i gatshëm[^.]*\.?\s*",
+        r",?\s*unë do të jem i gatshëm[^.]*\.?",
+        r"^Si asistent[^.]*\.?\s*",
+        r"^Bazuar në[^.]*\.?\s*",
+        r"^Sipas ligjit[^.]*\.?\s*",
+        r"^Sipas nenit[^.]*\.?\s*",
+    ]
+    for pat in patterns:
+        out = re.sub(pat, "", out, flags=re.IGNORECASE)
+    return out.strip()
 
 # ══════════════════════════════════════════════════════════════════════════
 # RAG ENGINE
@@ -208,6 +364,51 @@ class LIGJBOTRAG:
         print(f"\n{Fore.GREEN}🎯 LIGJBOT eshte gati! Shkruaj pyetjen tend.{Style.RESET_ALL}")
         print(f"{Fore.CYAN}💡 Shkruaj 'exit' ose 'quit' per te dale.{Style.RESET_ALL}\n")
         return True
+
+    def is_likely_legal(self, question: str) -> bool:
+        """Pyetje ligjore: fjalë kyçe, ngjashmëri semantike, ose jo meta/bisedë."""
+        if get_meta_answer(question):
+            return False
+        if is_legal_question(question):
+            return True
+        if not self.vector_store:
+            return False
+        try:
+            results = self.vector_store.similarity_search_with_score(
+                f"query: {question}", k=1
+            )
+            if results:
+                _, score = results[0]
+                return score < LEGAL_SCORE_MAX
+        except Exception:
+            pass
+        return False
+
+    def _generate(
+        self,
+        system: str,
+        user: str,
+        history: Optional[list] = None,
+    ) -> str:
+        if not self.llm:
+            return ""
+        messages: list = [SystemMessage(content=system)]
+        messages.extend(_history_to_messages(history))
+        messages.append(HumanMessage(content=user))
+
+        answer = ""
+        for attempt in range(2):
+            response = self.llm.invoke(messages)
+            answer = _clean_answer(_dedupe_paragraphs(response.content.strip()))
+            if answer and not _is_broken_answer(answer):
+                return answer
+            if attempt == 0:
+                messages.append(AIMessage(content=answer or "..."))
+                messages.append(HumanMessage(content=(
+                    "Gabim. Rishkruaje vetëm përgjigjen — pa 'Ti:', pa 'LIGJBOT:', "
+                    "pa përsëritje pyetjeje. Shqip i saktë, shkurt, miqësor."
+                )))
+        return answer or "Më vjen keq, nuk e kapërcova mirë. Mund ta pyesësh ndryshe?"
 
     def search_relevant_chunks(self, query: str, k: Optional[int] = None) -> List[Document]:
         """
@@ -377,7 +578,7 @@ class LIGJBOTRAG:
 
         if not relevant_docs:
             return {
-                "answer": "Nuk gjeta informacion relevant ne ligjet e indexuara per kete pyetje.",
+                "answer": "Hmm, s'e gjeta këtë te ligjet që kam në dorë. Mund ta riformulosh pak, ose më thuaj më konkretisht çfarë të ndodhi?",
                 "sources": [],
                 "chunks_used": 0,
             }
@@ -385,49 +586,19 @@ class LIGJBOTRAG:
         # ── Step 2: Ndërto Kontekstin ───────────────────────────────────
         context = self.build_context(relevant_docs)
 
-        # ── Optional: Histori bisede ────────────────────────────────────
-        history_text = ""
-        if history:
-            turns: list[str] = []
-            recent = history[-10:]  # max 5 Q/A pairs
-            for turn in recent:
-                role = turn.get("role")
-                content = (turn.get("content") or "").strip()
-                if not content:
-                    continue
-                if role == "user":
-                    prefix = "Qytetari:"
-                else:
-                    prefix = "LIGJBOT:"
-                turns.append(f"{prefix} {content}")
-            if turns:
-                history_text = (
-                    "HISTORIKU I BISEDËS (pyetje të mëparshme):\n"
-                    + "\n".join(turns)
-                    + "\n\n"
-                )
-
-        # ── Step 3: Ndërto Promptin ─────────────────────────────────────
-        full_prompt = f"""{SYSTEM_PROMPT}
-
-{history_text}===== DOKUMENTET LIGJORE (KONTEKSTI) =====
-{context}
-==========================================
-
-Çdo burim i mësipërm ka një URL. Kur referon një burim, përdor formatin markdown: [Neni X, Ligji Y](URL_E_BURIMIT)
-
-PYETJA: {question}
-
-PERGJIGJA (e natyrshme, sikur po i flet një shoku — me links inline ku ka burim):"""
-
-        # ── Step 4: LLM Generation ──────────────────────────────────────
+        # ── Step 3: LLM Generation ──────────────────────────────────────
         if not self.llm:
             return {
                 "error": "LLM nuk eshte aktiv. Vendos FAST_MODE=0 ose rinis serverin pa skip_llm.",
             }
 
-        response = self.llm.invoke([HumanMessage(content=full_prompt)])
-        answer = _dedupe_paragraphs(response.content.strip())
+        system = f"{CORE_PERSONA}\n\n{LEGAL_RULES}"
+        user = (
+            f"KONTEKSTI LIGJOR:\n{context}\n\n"
+            f"{question}\n\n"
+            "Përgjigja (vetëm teksti, pa etiketa):"
+        )
+        answer = self._generate(system, user, history=history)
 
         # ── Step 5: Sources ─────────────────────────────────────────────
         sources_text = self.build_sources_summary(relevant_docs)
@@ -437,6 +608,38 @@ PERGJIGJA (e natyrshme, sikur po i flet një shoku — me links inline ku ka bur
             "sources": sources_text,
             "chunks_used": len(relevant_docs),
             "docs": relevant_docs,
+        }
+
+    def ask_casual(self, question: str, history: Optional[list[dict]] = None) -> Dict:
+        """Përgjigje miqësore pa RAG — për bisedë të përditshme."""
+        if not self._initialized:
+            return {"error": "LIGJBOT nuk eshte inicializuar."}
+
+        meta = get_meta_answer(question)
+        if meta:
+            return {
+                "answer": meta,
+                "sources": "",
+                "chunks_used": 0,
+                "docs": [],
+            }
+
+        if not self.llm:
+            return {
+                "answer": "Hej! Jam LIGJBOT — më pyet çfarëdo për ligjet, ta shpjegoj thjesht.",
+                "sources": [],
+                "chunks_used": 0,
+                "docs": [],
+            }
+
+        system = f"{CORE_PERSONA}\n\n{CASUAL_RULES}"
+        user = f"{question}\n\nPërgjigja (vetëm teksti, pa etiketa):"
+        answer = self._generate(system, user, history=history)
+        return {
+            "answer": answer,
+            "sources": "",
+            "chunks_used": 0,
+            "docs": [],
         }
 
     def format_response(self, result: Dict, question: str) -> str:

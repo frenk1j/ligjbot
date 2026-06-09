@@ -1,40 +1,33 @@
-# ============================================================
-# LIGJBOT — .gitignore
-# ============================================================
-
-# Secrets — KURRE mos commit!
+# Secrets
 .env
+.env.local
+.env.*.local
 
-# Virtual environment
+# Python
 .venv/
 venv/
 env/
-
-# Vector store — shumë i madh, rigjenerohet me: python scripts/ingestion.py
-vector_store/
-
-# Python cache
 __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
-# PDF-të (opcional — shto nëse nuk do i commit)
-# data/pdfs/
+# Vector store (rigjenerohet me scripts/ingestion.py)
+vector_store/
 
-# OS
+# Uploads & output
+uploaded_pdfs/
+data/eval_results.csv
+
+# OS & IDE
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
 *.swp
-
-# Uploads & eval output
-uploaded_pdfs/
-data/eval_results.csv
+.cursor/
 
 # Logs
 *.log

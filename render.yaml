@@ -1,7 +1,7 @@
-# Deploy në Render: https://render.com
+# Render Blueprint — https://render.com/docs/blueprint-spec
 # 1. Lidhe repo-n GitHub
 # 2. New → Blueprint → zgjidh këtë repo
-# 3. Vendos env vars (GROQ, Firebase) te Dashboard
+# 3. Vendos env vars te Dashboard (GROQ_API_KEY, FIREBASE_*, etj.)
 
 services:
   - type: web

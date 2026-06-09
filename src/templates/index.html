@@ -12,6 +12,8 @@
 <link rel="manifest" href="/manifest.webmanifest"/>
 <link rel="apple-touch-icon" href="/static/ligjbot-logo.png"/>
 <link rel="icon" type="image/png" href="/static/ligjbot-logo.png"/>
+<link rel="preload" href="/static/ligjbot-logo.png" as="image" type="image/png"/>
+<link rel="prefetch" href="/news"/>
 <title>LIGJBOT — Asistenti Juridik</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -422,10 +424,9 @@
     justify-content: center;
     align-self: center;
     color: var(--text-light);
-    font-size: 18px;
     cursor: pointer;
     padding: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     line-height: 1;
     width: 40px;
     height: 40px;
@@ -434,20 +435,57 @@
     flex-shrink: 0;
     font-family: inherit;
     margin: 0;
+    transition: background .15s, border-color .15s, color .15s;
   }
+  .sidebar-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+  .sidebar-toggle-btn .toggle-icon-expand { display: none; }
+  .sidebar-toggle-btn .toggle-icon-collapse { display: block; }
+  .app.sidebar-collapsed .sidebar-toggle-btn .toggle-icon-expand { display: block; }
+  .app.sidebar-collapsed .sidebar-toggle-btn .toggle-icon-collapse { display: none; }
   .hamburger-btn { display: none; }
-  .sidebar-toggle-btn.glass-btn:hover { border-color: var(--gold); }
+  .sidebar-toggle-btn.glass-btn:hover {
+    border-color: var(--gold);
+    color: var(--heading);
+  }
 
   .topbar-logo {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 8px;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1;
+    letter-spacing: .08em;
     color: var(--heading);
-    transition: color .2s;
     flex-shrink: 0;
+    transition: opacity .2s ease;
+  }
+  .topbar-logo-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gold);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .topbar-logo-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  @media (min-width: 641px) {
+    .app.sidebar-collapsed .topbar-logo { display: flex; }
+  }
+
+  @media (max-width: 640px) {
+    .topbar-logo { display: flex; }
+    body.mobile-nav-open .topbar-logo { display: none; }
   }
   .topbar-divider {
     width: 1px; height: 18px; background: var(--border); margin: 0 2px;
@@ -478,6 +516,41 @@
     min-width: 0;
   }
   .topbar-status.hidden { display: none; }
+
+  .topbar-end {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .topbar-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: var(--radius-lg);
+    color: var(--text-light);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+    flex-shrink: 0;
+    font-family: inherit;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  .topbar-icon-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+  .topbar-icon-btn.glass-btn:hover {
+    border-color: var(--gold);
+    color: var(--heading);
+  }
 
   .sidebar-actions {
     display: flex;
@@ -571,7 +644,11 @@
     min-height: 100%;
   }
 
-  .message-row,
+  .message-row {
+    position: relative;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 72px;
+  }
   .empty-state {
     position: relative;
   }
@@ -914,6 +991,61 @@
     color: #fff;
   }
 
+  /* ── Intro splash ─────────────────────────────────────── */
+  .intro-screen {
+    position: fixed; inset: 0; z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    transition: opacity .6s ease, visibility .6s ease;
+  }
+  .intro-screen.intro-hide {
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .28s ease, visibility .28s ease;
+  }
+  [data-theme="dark"] .intro-screen {
+    background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,162,39,.14) 0%, transparent 65%), #0b1018;
+  }
+  [data-theme="light"] .intro-screen {
+    background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,162,39,.18) 0%, transparent 65%), #f3f4f6;
+  }
+  .intro-inner {
+    text-align: center;
+    animation: introFadeIn .8s ease both;
+  }
+  .intro-logo-ring {
+    width: 120px; height: 120px; margin: 0 auto 20px;
+    border-radius: 50%;
+    border: 3px solid var(--gold);
+    box-shadow: 0 0 40px rgba(201,162,39,.35), 0 0 80px rgba(201,162,39,.12);
+    display: flex; align-items: center; justify-content: center;
+    animation: introPulse 2s ease-in-out infinite;
+    overflow: hidden;
+  }
+  .intro-logo-ring img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  }
+  .intro-title {
+    font-size: 32px; font-weight: 800; letter-spacing: .12em;
+    color: var(--heading);
+    animation: introSlideUp .7s .3s ease both;
+  }
+  .intro-tagline {
+    font-size: 14px; color: var(--text-muted); margin-top: 8px;
+    animation: introSlideUp .7s .5s ease both;
+  }
+  @keyframes introFadeIn {
+    from { opacity: 0; transform: scale(.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes introSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes introPulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(201,162,39,.35), 0 0 80px rgba(201,162,39,.12); }
+    50%      { box-shadow: 0 0 55px rgba(201,162,39,.5), 0 0 100px rgba(201,162,39,.2); }
+  }
+
   /* ── Auth Screen ──────────────────────────────────────── */
   .auth-screen {
     position: fixed; inset: 0; z-index: 1000;
@@ -1196,9 +1328,16 @@
 
     .sidebar-toggle-btn,
     .theme-btn,
+    .topbar-icon-btn,
     .hamburger-btn {
       min-width: 44px;
       min-height: 44px;
+    }
+
+    .sidebar,
+    .glass-btn {
+      backdrop-filter: blur(8px) saturate(1.1);
+      -webkit-backdrop-filter: blur(8px) saturate(1.1);
     }
 
     .starter-card {
@@ -1310,6 +1449,18 @@
 {% endif %}
 </head>
 <body>
+<!-- INTRO SPLASH -->
+<div id="intro-screen" class="intro-screen">
+  <div class="intro-inner">
+    <div class="intro-logo-ring">
+      <img id="intro-logo" src="/static/ligjbot-logo.png" alt="LIGJBOT"/>
+    </div>
+    <h1 class="intro-title">LIGJBOT</h1>
+    <p class="intro-tagline">Asistenti juridik shqiptar</p>
+  </div>
+</div>
+<!-- /INTRO -->
+
 <!-- AUTH SCREEN -->
 <div id="auth-screen" class="auth-screen" style="display:none">
   <div class="auth-card">
@@ -1368,10 +1519,6 @@
   <button class="new-folder-cancel-btn" onclick="cancelNewFolder()">✕</button>
 </div>
 
-<a href="/news" class="new-chat-btn glass-btn" style="text-decoration:none;margin:6px 12px 0;width:calc(100% - 24px);">
-  📰 &nbsp;Lajme Rrugore
-</a>
-
 <div class="sidebar-section hidden" id="chats-section">Chats</div>
 <div class="history-list" id="history-list"></div>
 
@@ -1385,9 +1532,15 @@
 
   <div class="main">
     <div class="topbar">
-      <button type="button" class="sidebar-toggle-btn glass-btn" id="sidebar-toggle" onclick="toggleSidebarDesktop()" aria-label="Hap/mbyll sidebar">☰</button>
-      <button type="button" class="hamburger-btn sidebar-toggle-btn glass-btn" onclick="openSidebarMobile()" aria-label="Menu">☰</button>
-      <div class="topbar-logo">
+      <button type="button" class="sidebar-toggle-btn glass-btn" id="sidebar-toggle" onclick="toggleSidebarDesktop()" aria-label="Mbyll sidebar" title="Mbyll sidebar">
+        <svg class="toggle-icon-collapse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="m15 9-3 3 3 3"/></svg>
+        <svg class="toggle-icon-expand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="m13 9-3 3 3 3"/></svg>
+      </button>
+      <button type="button" class="hamburger-btn sidebar-toggle-btn glass-btn" onclick="openSidebarMobile()" aria-label="Hap menunë" title="Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </button>
+      <div class="topbar-logo" id="topbar-logo">
+        <div class="topbar-logo-mark"><img class="logo-img" src="/static/ligjbot-logo.png" alt=""/></div>
         <span>LIGJBOT</span>
       </div>
       <div class="topbar-status" id="topbar-status">
@@ -1395,6 +1548,10 @@
         <div class="status-dot loading" id="status-dot"></div>
         <span class="topbar-label" id="topbar-label">Duke u ngarkuar…</span>
       </div>
+      <div class="topbar-end">
+        <a href="/news" class="topbar-icon-btn glass-btn" title="Lajme Rrugore" aria-label="Lajme Rrugore">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1z"/><path d="M4 7h16"/><path d="M8 11h4"/><path d="M8 15h4"/><path d="M14 11h3"/><path d="M14 15h3"/></svg>
+        </a>
       <div class="user-menu-wrap" id="user-menu-wrap" style="display:none">
         <button class="user-avatar-btn glass-btn" id="user-avatar-btn" onclick="toggleUserMenu()" aria-label="Profili">
           <img id="user-photo" class="user-photo" src="" alt="" style="display:none">
@@ -1406,6 +1563,7 @@
           <div class="user-dropdown-divider"></div>
           <button class="user-dropdown-item" onclick="signOutUser()">🚪 Dil nga llogaria</button>
         </div>
+      </div>
       </div>
     </div>
 
@@ -1449,7 +1607,7 @@
         </button>
       </div>
       <div class="input-footer">
-        LIGJBOT mund të bëjë gabime. Për situata serioze konsultohuni me avokat.
+        LIGJBOT mund të bëjë gabime. Verifiko informacionin me burimet e cituara.
       </div>
     </div>
   </div>
@@ -1703,6 +1861,12 @@
   function setSidebarCollapsed(collapsed) {
     document.querySelector(".app").classList.toggle("sidebar-collapsed", collapsed);
     if (!isMobile()) localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+    const toggle = document.getElementById("sidebar-toggle");
+    if (toggle) {
+      const label = collapsed ? "Hap sidebar" : "Mbyll sidebar";
+      toggle.setAttribute("aria-label", label);
+      toggle.title = label;
+    }
   }
 
   function toggleSidebarDesktop() {
@@ -1779,7 +1943,13 @@
   }
 
   async function init() {
+    pollStatus();
+    loadSuggestions();
+
+    const introDone = playIntro();
     const fbReady = initFirebase();
+
+    await introDone;
 
     if (fbReady) {
       _auth.onAuthStateChanged(async (user) => {
@@ -1792,16 +1962,11 @@
           showAuthScreen();
           loadHistory();
         }
-        await loadSuggestions();
-        await pollStatus();
         ensureActiveChat();
         renderHistory();
       });
     } else {
-      // No Firebase — run with localStorage only
       loadHistory();
-      await loadSuggestions();
-      await pollStatus();
       ensureActiveChat();
       renderHistory();
     }
@@ -1852,10 +2017,10 @@
         statusWrap.classList.remove("hidden");
         dot.className     = "status-dot loading";
         label.textContent = "Duke u ngarkuar…";
-        setTimeout(pollStatus, 600);
+        setTimeout(pollStatus, 250);
       }
     } catch (e) {
-      setTimeout(pollStatus, 1200);
+      setTimeout(pollStatus, 500);
     }
   }
 
@@ -2015,7 +2180,15 @@
       </div>`;
     messages.appendChild(row);
     const textEl = row.querySelector(".message-text");
-    await typeText(textEl, answer, 8);
+    const metaRow = row.querySelector(".meta-row");
+    const sourcesBlock = row.querySelector(".sources-block");
+    if (metaRow) metaRow.style.opacity = "0";
+    if (sourcesBlock) sourcesBlock.style.opacity = "0";
+
+    await typeText(textEl, answer);
+
+    if (metaRow) metaRow.style.opacity = "";
+    if (sourcesBlock) sourcesBlock.style.opacity = "";
     scrollBottom();
     upsertChatMessage({
       role: "assistant",
@@ -2093,20 +2266,50 @@
     return s;
   }
 
-  async function typeText(el, text, delayMs = 8) {
+  async function typeText(el, text) {
     const raw = String(text || "");
     if (!raw.length) { el.innerHTML = ""; return; }
-    // render immediately on mobile or if text is long
-    if (isMobile() || raw.length > 600) { el.innerHTML = renderBotText(raw); return; }
+
+    el.innerHTML = "";
     let i = 0;
-    while (i < raw.length) {
-      const step = i < 120 ? 1 : i < 400 ? 2 : 4;
-      el.innerHTML = renderBotText(raw.slice(0, i + step));
-      i += step;
+    const len = raw.length;
+    const delay = len > 500 ? 7 : len > 250 ? 10 : 14;
+
+    while (i < len) {
+      const step = len > 400 ? 3 : len > 150 ? 2 : 1;
+      i = Math.min(i + step, len);
+      el.innerHTML = renderBotText(raw.slice(0, i));
       scrollBottom();
-      await new Promise(r => setTimeout(r, delayMs));
+      await new Promise((r) => setTimeout(r, delay));
     }
     el.innerHTML = renderBotText(raw);
+  }
+
+  function playIntro() {
+    return new Promise((resolve) => {
+      const intro = document.getElementById("intro-screen");
+      const introLogo = document.getElementById("intro-logo");
+      if (!intro) { resolve(); return; }
+      if (sessionStorage.getItem("ligjbot-intro") === "1") {
+        intro.classList.add("intro-hide");
+        resolve();
+        return;
+      }
+      const theme = document.documentElement.getAttribute("data-theme") || "dark";
+      if (introLogo) {
+        introLogo.src = theme === "light"
+          ? "/static/ligjbot-logo-light.png"
+          : "/static/ligjbot-logo.png";
+      }
+      intro.style.display = "flex";
+      const finish = () => {
+        sessionStorage.setItem("ligjbot-intro", "1");
+        intro.classList.add("intro-hide");
+        setTimeout(resolve, 280);
+      };
+      setTimeout(finish, 900);
+      intro.addEventListener("click", finish, { once: true });
+    });
   }
 
   function escapeAttr(str) {

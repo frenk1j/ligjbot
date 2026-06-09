@@ -4,8 +4,8 @@ TEST RAG — Teston RAG pipeline automatikisht
 LIGJBOT - Faza 2
 
 Perdorim:
-  python src/test_rag.py          # Te gjitha testet
-  python src/test_rag.py --quick  # 3 teste te shpejta
+  python tests/test_rag.py          # Te gjitha testet
+  python tests/test_rag.py --quick  # 3 teste te shpejta
 ====================================================
 """
 

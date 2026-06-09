@@ -30,8 +30,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from rag_core import LIGJBOTRAG, FAST_TOP_K
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.config["TEMPLATES_AUTO_RELOAD"] = True
-app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+app.config["TEMPLATES_AUTO_RELOAD"] = os.getenv("FLASK_DEBUG", "0") == "1"
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = int(os.getenv("STATIC_CACHE_SECONDS", "31536000"))
 
 # Singleton RAG instance (loaded once at startup)
 bot = LIGJBOTRAG()
@@ -269,18 +269,6 @@ def chat():
     data = request.get_json() or {}
     question = (data.get("message") or "").strip()
     user_id = data.get("user_id") or "anonymous"
-        # Heuristic: if question is clearly not legal / about rights / police / laws, skip
-    lower_q = question.lower()
-    legal_keywords = ["ligj", "nen", "polici", "gjob", "kod", "rrugor", "procedur", "drejtat", "arrest"]
-    if not any(k in lower_q for k in legal_keywords):
-        return jsonify({
-            "answer": "Nuk gjeta informacion për këtë pyetje në ligjet e indeksuara. LIGJBOT është menduar vetëm për pyetje ligjore (të drejta, detyrime, polici, gjoba, ligje).",
-            "sources": [],
-            "chunks_used": 0,
-            "cached": False,
-            "response_s": 0.0,
-            "mode": "guardrail",
-        })
 
     if not question:
         return jsonify({"error": "Mesazhi është bosh."}), 400
@@ -291,17 +279,24 @@ def chat():
     try:
         start = time.perf_counter()
         cache_key = question.lower()
-        if cache_key in answer_cache:
+        if bot_ready and bot.is_likely_legal(question) and cache_key in answer_cache:
             cached = dict(answer_cache[cache_key])
             cached["cached"] = True
             return jsonify(cached)
 
-        if FAST_MODE:
+        mode = "llm"
+        if not bot.is_likely_legal(question):
+            result = bot.ask_casual(question, history=history)
+            mode = "casual"
+            if "error" in result:
+                return jsonify({"error": result["error"]}), 500
+        elif FAST_MODE:
+            mode = "fast"
             docs = bot.search_relevant_chunks(question, k=FAST_TOP_K)
             elapsed = time.perf_counter() - start
             if not docs:
                 return jsonify({
-                    "answer": "Nuk gjeta informacion relevant në ligjet e indeksuara për këtë pyetje.",
+                    "answer": "Hmm, s'e gjeta këtë te ligjet që kam. Provo ta pyesësh pak ndryshe?",
                     "sources": [],
                     "chunks_used": 0,
                     "cached": False,
@@ -364,20 +359,21 @@ def chat():
             "chunks_used": result["chunks_used"],
             "cached": False,
             "response_s": round(elapsed, 2),
-            "mode": "fast" if FAST_MODE else "llm",
+            "mode": mode,
         }
 
-        # update per-user history (only when LLM mode is used)
-        if not FAST_MODE:
+        # update per-user history
+        if mode in ("llm", "casual"):
             history.append({"role": "user", "content": question})
             history.append({"role": "assistant", "content": payload["answer"]})
             if len(history) > 2 * MAX_TURNS:
                 history = history[-2 * MAX_TURNS:]
             user_histories[user_id] = history
 
-        if len(answer_cache) >= CACHE_MAX:
-            answer_cache.pop(next(iter(answer_cache)))
-        answer_cache[cache_key] = payload
+        if mode != "casual":
+            if len(answer_cache) >= CACHE_MAX:
+                answer_cache.pop(next(iter(answer_cache)))
+            answer_cache[cache_key] = payload
         return jsonify(payload)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
